@@ -1,0 +1,13 @@
+{
+  "date": "2025-11-06",
+  "title": "Whispers in the Windswept Hills",
+  "lore": "High on windswept peaks, forgotten wind chimes sing secrets of the sky. Tune them right to call down a storm of floating rewards.",
+  "steps": [
+    "Climb to the highest windswept hill at dawn.",
+    "Arrange 4 note blocks in a square and play 'G-A-B' melody.",
+    "The wind reveals a hidden elytra launchpad with firework charges."
+  ],
+  "reward": "Wind-tuned elytra with auto-glide enchantment blueprint.",
+  "biomeHint": "Windswept Hills",
+  "id": "20251106"
+}
