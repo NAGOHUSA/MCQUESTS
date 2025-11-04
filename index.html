@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MC Daily Quests – nagoh.us</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> <!-- For thumbs-up icon -->
   <style>
     :root { --bg: #0a0a0a; --card: #1a1a1a; --accent: #4CAF50; --text: #fff; --gold: #FFEB3B; --badge: #FFD700; }
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -12,17 +13,18 @@
     h1 { color: var(--gold); font-size: 1.8rem; margin: 20px 0; text-shadow: 2px 2px #000; }
     .container { max-width: 900px; margin: 0 auto; }
     #quest, .archive { background: var(--card); padding: 20px; border-radius: 12px; margin: 15px 0; border: 2px solid #333; position: relative; }
-    .badge { position: absolute; top: -10px; right: -10px; background: var(--badge); color: #000; padding: 5px 10px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; box-shadow: 0 0 10px gold; animation: pulse 2s infinite; }
+    .badge { position: absolute; top: -10px; right: -10px; background: var(--badge); color: #000; padding: 5px 10px; border-radius: 50%; font-size: 1.2rem; font-weight: bold; box-shadow: 0 0 10px gold; animation: pulse 2s infinite; z-index: 10; }
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     h2 { color: var(--gold); margin: 10px 0; font-size: 1.2rem; }
     ol { text-align: left; margin: 15px 0; padding-left: 30px; }
     .biome { color: var(--accent); font-weight: bold; }
-    .vote-btn { background: #FF9800; color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.8rem; margin-top: 10px; display: inline-block; text-decoration: none; }
-    .vote-btn:hover { background: #e68900; }
+    .vote-btn { background: none; border: none; color: #FF9800; font-size: 1.5rem; cursor: pointer; margin: 5px; opacity: 0.7; transition: opacity 0.3s; } /* Hidden feel: No bg, subtle */
+    .vote-btn:hover, .vote-btn.voted { opacity: 1; color: #FFD700; } /* Glow on vote */
+    .votes { font-size: 0.7rem; color: #aaa; margin-top: 5px; }
+    .complete-check { margin: 10px; } /* Optional auto-vote trigger */
     .carousel { display: flex; overflow-x: auto; gap: 15px; padding: 10px; scrollbar-width: none; }
     .carousel::-webkit-scrollbar { display: none; }
     .archive-card { min-width: 280px; background: #222; padding: 15px; border-radius: 8px; font-size: 0.8rem; position: relative; }
-    .votes { font-size: 0.7rem; color: #aaa; margin-top: 5px; }
     input, button { padding: 12px; margin: 10px 5px; font-family: inherit; font-size: 1rem; border: 2px solid #444; border-radius: 6px; }
     button { background: var(--accent); color: white; cursor: pointer; }
     button:hover { background: #45a049; }
@@ -36,7 +38,7 @@
 <body>
   <div class="container">
     <h1>MC DAILY QUESTS</h1>
-    <p>One <strong>vanilla</strong> quest per day. <strong>Vote with +1 on GitHub!</strong></p>
+    <p>One <strong>vanilla</strong> quest per day. Vote subtly—1/day max!</p>
 
     <div id="quest">Loading epicness...</div>
 
@@ -45,15 +47,14 @@
     <div id="shareUrl" class="share" style="display:none;"></div>
     <div id="qrCode"></div>
 
-    <h3>Quest Archive + Leaderboard</h3>
-    <div class="carousel" id="archive"><div class="empty">Loading votes...</div></div>
+    <h3>Quest Archive + Your Votes</h3>
+    <div class="carousel" id="archive"><div class="empty">Loading quests...</div></div>
 
     <h3>My Adventure Log</h3>
     <div class="log" id="log">No quests attached yet.</div>
 
     <p>
-      <a href="https://github.com/NAGOHUSA/MCDAILYQUESTS.io/discussions" target="_blank" class="vote-btn">Suggest Remixes</a> | 
-      <a href="https://buymeacoffee.com/nagoh" target="_blank" class="vote-btn">Fuel Quests</a>
+      <a href="https://buymeacoffee.com/nagoh" target="_blank" style="color: #FF9800;">Fuel Quests</a>
     </p>
   </div>
 
@@ -62,7 +63,42 @@
     const REPO = 'NAGOHUSA/MCDAILYQUESTS.io';
     const BASE_PATH = '/';
     const today = new Date().toISOString().split('T')[0];
-    let mostVotedQuest = null;
+    const VOTES_KEY = 'nagohQuestVotes'; // All votes in one object
+    const LAST_VOTE_KEY = 'nagohLastVoteDate'; // For daily limit
+
+    // Load/Save votes to localStorage
+    function getVotes() {
+      return JSON.parse(localStorage.getItem(VOTES_KEY) || '{}');
+    }
+    function saveVotes(votes) {
+      localStorage.setItem(VOTES_KEY, JSON.stringify(votes));
+    }
+    function canVoteToday() {
+      const lastVote = localStorage.getItem(LAST_VOTE_KEY);
+      if (!lastVote) return true;
+      const lastDate = new Date(lastVote).toDateString();
+      return new Date().toDateString() !== lastDate;
+    }
+
+    // Vote function: Automatic, hidden
+    function voteForQuest(questId) {
+      if (!canVoteToday()) {
+        alert('1 vote per day—check back tomorrow!'); // Or subtle toast
+        return false;
+      }
+      const votes = getVotes();
+      votes[questId] = (votes[questId] || 0) + 1;
+      saveVotes(votes);
+      localStorage.setItem(LAST_VOTE_KEY, new Date().toISOString());
+      return true;
+    }
+
+    // Optional: Auto-vote on "complete"
+    function setupCompleteAutoVote(containerId, questId) {
+      const container = document.getElementById(containerId);
+      const checkHtml = '<label class="complete-check"><input type="checkbox" onchange="if(this.checked) voteForQuest(\'' + questId + '\');"> Quest Complete (Auto-Vote)</label>';
+      container.innerHTML += checkHtml;
+    }
 
     async function getAvailableQuestDates() {
       try {
@@ -70,51 +106,24 @@
         const files = await res.json();
         return files
           .filter(f => f.name.match(/^\d{4}-\d{2}-\d{2}\.json$/))
-          .map(f => ({ date: f.name.replace('.json', ''), path: f.path }))
+          .map(f => ({ date: f.name.replace('.json', ''), id: f.name.replace('.json', '').replace(/-/g, '') }))
           .sort((a, b) => b.date.localeCompare(a.date));
       } catch (err) {
-        console.error('GitHub API failed:', err);
+        console.error('API failed:', err);
         return [];
       }
     }
 
-    async function getVotesForQuest(path) {
-      try {
-        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`);
-        const data = await res.json();
-        // GitHub API doesn't return reactions directly on contents — use issues trick below
-        return 0; // Placeholder — real count via Issues (see below)
-      } catch {
-        return 0;
-      }
-    }
-
-    // REAL VOTE COUNT: Use GitHub Issues as "vote board"
-    async function getAllVotes() {
-      try {
-        const res = await fetch(`https://api.github.com/repos/${REPO}/issues?labels=quest-vote&state=open`);
-        const issues = await res.json();
-        const votes = {};
-        issues.forEach(issue => {
-          const match = issue.title.match(/Vote for (2025-\d{2}-\d{2})/);
-          if (match) {
-            votes[match[1]] = (issue.reactions['+1'] || 0) + (issue.reactions['heart'] || 0);
-          }
-        });
-        return votes;
-      } catch {
-        return {};
-      }
-    }
-
-    async function loadQuest(date, container = 'quest', showVote = false, votes = 0, isWinner = false) {
+    async function loadQuest(date, container = 'quest', showVote = false, questId) {
       const url = `https://raw.githubusercontent.com/${REPO}/main/quests/${date}.json`;
       try {
         const res = await fetch(url);
         if (!res.ok) throw new Error('Not found');
         const q = await res.json();
-        const voteBtn = showVote ? `<a href="https://github.com/${REPO}/issues/new?title=Vote%20for%20${date}&labels=quest-vote&body=Vote%20for%20quest%20${date}%21" target="_blank" class="vote-btn">+1 Vote (${votes})</a>` : '';
-        const badge = isWinner ? `<div class="badge">1st</div>` : '';
+        const votes = getVotes();
+        const voteCount = votes[questId] || 0;
+        const voteBtn = showVote ? `<button class="vote-btn" title="Vote (+1)" onclick="if(voteForQuest('${questId}')){this.classList.add('voted'); event.stopPropagation();}"><span class="material-icons">thumb_up</span> <span class="votes">(${voteCount})</span></button>` : '';
+        const badge = voteCount > (votes[Object.keys(votes).find(id => id !== questId)] || 0) ? '<div class="badge">⭐</div>' : ''; // Simple max check
         const html = `
           ${badge}
           <h2>${q.title}</h2>
@@ -122,14 +131,14 @@
           <h3>Steps:</h3><ol>${q.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
           <h3>Reward:</h3><p>${q.reward}</p>
           <p class="biome">Start: ${q.biomeHint}</p>
-          <small>Quest ${q.id}${showVote ? `<br><span class="votes">Votes: ${votes}</span>` : ''}</small>
+          <small>Quest ${q.id}</small>
           ${voteBtn}
+          ${showVote ? setupCompleteAutoVote(container, questId) : ''} <!-- Hidden auto-option -->
         `;
         document.getElementById(container).innerHTML = html;
-        return { date, votes };
+        return { date, votes: voteCount };
       } catch {
         document.getElementById(container).innerHTML = `<p class="empty">Quest ${date} not ready.</p>`;
-        return null;
       }
     }
 
@@ -160,26 +169,13 @@
 
     async function loadArchive() {
       const archive = document.getElementById('archive');
-      archive.innerHTML = `<div class="empty">Loading votes & quests...</div>`;
+      archive.innerHTML = `<div class="empty">Loading quests...</div>`;
 
       const questFiles = await getAvailableQuestDates();
-      const votes = await getAllVotes();
-
       if (questFiles.length === 0) {
         archive.innerHTML = `<div class="empty">No quests yet!</div>`;
         return;
       }
-
-      // Find most voted
-      let winner = null;
-      let maxVotes = -1;
-      questFiles.forEach(q => {
-        const v = votes[q.date] || 0;
-        if (v > maxVotes) {
-          maxVotes = v;
-          winner = q.date;
-        }
-      });
 
       archive.innerHTML = '';
       questFiles.slice(0, 7).forEach((q, i) => {
@@ -187,22 +183,17 @@
         card.className = 'archive-card';
         card.innerHTML = `<div id="a${i}"><small>Loading...</small></div>`;
         archive.appendChild(card);
-        const isWinner = winner === q.date;
-        loadQuest(q.date, `a${i}`, true, votes[q.date] || 0, isWinner);
+        loadQuest(q.date, `a${i}`, true, q.id); // Show vote in archive
       });
-
-      // Show winner in main quest if today
-      const params = new URLSearchParams(location.search);
-      const date = params.get('date') || today;
-      if (questFiles.some(q => q.date === date)) {
-        loadQuest(date, 'quest', true, votes[date] || 0, winner === date);
-      }
     }
 
     // Init
     const params = new URLSearchParams(window.location.search);
     const date = params.get('date') || today;
-    loadQuest(date, 'quest', false);
+    const questFiles = await getAvailableQuestDates(); // Wait for files
+    if (questFiles.some(q => q.date === date)) {
+      loadQuest(date, 'quest', true, questFiles.find(q => q.date === date).id);
+    }
     loadArchive();
     updateLog();
   </script>
