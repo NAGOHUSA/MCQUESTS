@@ -1,0 +1,13 @@
+{
+  "date": "2025-11-05",
+  "title": "Echoes of the Elder Guardian",
+  "lore": "The ocean monuments hold echoes of drowned kings, guarding prismarine keys to surface treasures. Dive silent, or the waves claim your breath.",
+  "steps": [
+    "Swim to a monument without gold armor (stealth mode).",
+    "Solve the elder's riddle: 'Wet gold fears the dry eye' (use a spyglass on a gold block underwater).",
+    "Unlock the conduit for a temporary water-breathing trident."
+  ],
+  "reward": "Prismarine spyglass that reveals buried ocean ruins.",
+  "biomeHint": "Ocean Monument",
+  "id": "20251105"
+}
