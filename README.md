@@ -1,0 +1,2 @@
+# MCDAILYQUESTS
+Minecraft Daily Quests
