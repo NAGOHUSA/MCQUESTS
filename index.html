@@ -1,52 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MC Daily Quests - nagoh.us</title>
-    <style>/* Same dark Minecraft theme as before */</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MC Daily Quests – nagoh.us</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #0a0a0a; --card: #1a1a1a; --accent: #4CAF50; --text: #fff; --gold: #FFEB3B; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { 
+      background: var(--bg); color: var(--text); 
+      font-family: 'Press Start 2P', cursive; 
+      text-align: center; padding: 20px; line-height: 1.6;
+      image-rendering: pixelated;
+    }
+    h1 { color: var(--gold); font-size: 1.8rem; margin: 20px 0; text-shadow: 2px 2px #000; }
+    .container { max-width: 900px; margin: 0 auto; }
+    #quest, .archive { background: var(--card); padding: 20px; border-radius: 12px; margin: 15px 0; border: 2px solid #333; }
+    h2 { color: var(--gold); margin: 10px 0; font-size: 1.2rem; }
+    ol { text-align: left; margin: 15px 0; padding-left: 30px; }
+    .biome { color: var(--accent); font-weight: bold; }
+    .carousel { display: flex; overflow-x: auto; gap: 15px; padding: 10px; scrollbar-width: none; }
+    .carousel::-webkit-scrollbar { display: none; }
+    .archive-card { min-width: 280px; background: #222; padding: 15px; border-radius: 8px; font-size: 0.8rem; }
+    input, button { 
+      padding: 12px; margin: 10px 5px; font-family: inherit; font-size: 1rem; 
+      border: 2px solid #444; border-radius: 6px; 
+    }
+    button { background: var(--accent); color: white; cursor: pointer; }
+    button:hover { background: #45a049; }
+    .share, .qr { background: #2196F3; color: white; padding: 10px; border-radius: 6px; margin: 10px 0; }
+    .vote { color: #FF9800; }
+    .log { background: #111; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 0.8rem; text-align: left; max-height: 200px; overflow-y: auto; }
+    canvas { margin: 10px auto; display: block; }
+    @media (max-width: 600px) { h1 { font-size: 1.4rem; } }
+  </style>
 </head>
 <body>
-    <h1>🌟 MC Daily Quests</h1>
-    <p>One vanilla quest/day. Attach to seed, share adventure!</p>
-    <div id="quest">Loading...</div>
-    <input type="text" id="seed" placeholder="Your world seed...">
+  <div class="container">
+    <h1>MC DAILY QUESTS</h1>
+    <p>One <strong>vanilla</strong> quest per day. No mods. Pure adventure.</p>
+
+    <div id="quest">Loading epicness...</div>
+
+    <input type="text" id="seed" placeholder="Your world seed..." />
     <button onclick="attachQuest()">Attach & Share</button>
     <div id="shareUrl" class="share" style="display:none;"></div>
-    <p><a href="https://github.com/NAGOHUSA/MCDAILYQUESTS.io/discussions" target="_blank">Vote/Remix</a> | <a href="https://buymeacoffee.com/nagoh" target="_blank">Fuel Quests</a></p>
+    <div id="qrCode"></div>
 
-    <script>
-        const REPO = 'NAGOHUSA/MCDAILYQUESTS.io';
-        async function loadQuest(date = new Date().toISOString().split('T')[0]) {
-            const url = `https://raw.githubusercontent.com/${REPO}/main/quests/${date}.json`;
-            try {
-                const res = await fetch(url);
-                const quest = await res.json();
-                document.getElementById('quest').innerHTML = `
-                    <div style="background:#1a1a1a;padding:20px;border-radius:8px;">
-                        <h2 style="color:#FFEB3B;">${quest.title}</h2>
-                        <p><em>${quest.lore}</em></p>
-                        <h3>Steps:</h3><ol>${quest.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
-                        <h3>Reward:</h3><p>${quest.reward}</p>
-                        <h3>Start:</h3><p>${quest.biomeHint}</p>
-                        <small>Quest ${quest.id} | <a href="https://github.com/${REPO}/blob/main/quests/${date}.json" target="_blank">Raw</a></small>
-                    </div>
-                `;
-            } catch {
-                document.getElementById('quest').innerHTML = `<p>Quest brewing... <a href="?date=2025-11-04">Try Day 1</a></p>`;
-            }
-        }
-        function attachQuest() {
-            const seed = document.getElementById('seed').value.trim();
-            if (!seed) return alert('Seed plz!');
-            const date = new Date().toISOString().split('T')[0];
-            const share = `${window.location}?seed=${seed}&quest=${date}`;
-            localStorage.setItem('nagohQuests', JSON.stringify([...JSON.parse(localStorage.getItem('nagohQuests')||'[]'), {seed, quest:date}]));
-            document.getElementById('shareUrl').innerHTML = `Share: <a href="${share}">${share}</a>`;
-            document.getElementById('shareUrl').style.display = 'block';
-            alert('Quest loaded! Post to r/Minecraft 🚀');
-        }
-        loadQuest(new URLSearchParams(location.search).get('date') || null);
-    </script>
+    <h3>Quest Archive (Swipe)</h3>
+    <div class="carousel" id="archive"></div>
+
+    <h3>My Adventure Log</h3>
+    <div class="log" id="log">No quests attached yet.</div>
+
+    <p>
+      <a href="https://github.com/NAGOHUSA/MCDAILYQUESTS.io/discussions" target="_blank" class="vote">Vote & Remix</a> | 
+      <a href="https://buymeacoffee.com/nagoh" target="_blank">Fuel Quests</a>
+    </p>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode.js@1.0.0/lib/qrcode.min.js"></script>
+  <script>
+    const REPO = 'NAGOHUSA/MCDAILYQUESTS.io';
+    const today = new Date().toISOString().split('T')[0];
+
+    async function loadQuest(date, container = 'quest') {
+      const url = `https://raw.githubusercontent.com/${REPO}/main/quests/${date}.json`;
+      try {
+        const res = await fetch(url);
+        const q = await res.json();
+        const html = `
+          <h2>${q.title}</h2>
+          <p><em>${q.lore}</em></p>
+          <h3>Steps:</h3><ol>${q.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+          <h3>Reward:</h3><p>${q.reward}</p>
+          <p class="biome">Start: ${q.biomeHint}</p>
+          <small>Quest ${q.id}</small>
+        `;
+        document.getElementById(container).innerHTML = html;
+        return q;
+      } catch {
+        document.getElementById(container).innerHTML = `<p>Quest not found. <a href="?date=2025-11-04">Try Day 1</a></p>`;
+      }
+    }
+
+    function attachQuest() {
+      const seed = document.getElementById('seed').value.trim();
+      if (!seed) return alert('Enter a seed!');
+      const share = `${location.origin}?seed=${seed}&quest=${today}`;
+      const log = JSON.parse(localStorage.getItem('nagohQuests') || '[]');
+      log.push({ seed, quest: today, date: new Date().toLocaleDateString() });
+      localStorage.setItem('nagohQuests', JSON.stringify(log));
+
+      document.getElementById('shareUrl').innerHTML = `Share: <a href="${share}" target="_blank">${share}</a>`;
+      document.getElementById('shareUrl').style.display = 'block';
+
+      new QRCode(document.getElementById("qrCode"), { text: share, width: 128, height: 128 });
+      updateLog();
+    }
+
+    function updateLog() {
+      const log = JSON.parse(localStorage.getItem('nagohQuests') || '[]');
+      const div = document.getElementById('log');
+      if (log.length === 0) {
+        div.innerHTML = 'No quests attached yet.';
+        return;
+      }
+      div.innerHTML = log.map(l => `• ${l.date} – Seed <strong>${l.seed}</strong> – Quest ${l.quest}`).join('<br>');
+    }
+
+    async function loadArchive() {
+      const archive = document.getElementById('archive');
+      for (let i = 1; i <= 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const date = d.toISOString().split('T')[0];
+        const card = document.createElement('div');
+        card.className = 'archive-card';
+        card.innerHTML = `<small>${date}</small><div id="a${i}"><small>Loading...</small></div>`;
+        archive.appendChild(card);
+        await loadQuest(date, `a${i}`);
+      }
+    }
+
+    // Init
+    const params = new URLSearchParams(location.search);
+    const date = params.get('date') || today;
+    loadQuest(date);
+    loadArchive();
+    updateLog();
+  </script>
 </body>
 </html>
