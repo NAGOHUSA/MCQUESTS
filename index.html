@@ -1,26 +1,52 @@
-<!-- public/index.html -->
-<h1>Quest of the Day</h1>
-<div id="quest"></div>
-<input id="seed" placeholder="Enter your world seed..." />
-<button onclick="attachQuest()">Add to My World</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MC Daily Quests - nagoh.us</title>
+    <style>/* Same dark Minecraft theme as before */</style>
+</head>
+<body>
+    <h1>🌟 MC Daily Quests</h1>
+    <p>One vanilla quest/day. Attach to seed, share adventure!</p>
+    <div id="quest">Loading...</div>
+    <input type="text" id="seed" placeholder="Your world seed...">
+    <button onclick="attachQuest()">Attach & Share</button>
+    <div id="shareUrl" class="share" style="display:none;"></div>
+    <p><a href="https://github.com/NAGOHUSA/MCDAILYQUESTS.io/discussions" target="_blank">Vote/Remix</a> | <a href="https://buymeacoffee.com/nagoh" target="_blank">Fuel Quests</a></p>
 
-<script>
-async function loadQuest() {
-  const today = new Date().toISOString().split('T')[0];
-  const res = await fetch(`https://raw.githubusercontent.com/yourname/nagoh-quests/main/quests/${today}.json`);
-  const quest = await res.json();
-  document.getElementById('quest').innerHTML = `
-    <h2>${quest.title}</h2>
-    <p><em>${quest.lore}</em></p>
-    <ol>${quest.steps.map(s => `<li>${s}</li>`).join('')}</ol>
-  `;
-}
-
-function attachQuest() {
-  const seed = document.getElementById('seed').value;
-  const url = `${window.location}?seed=${seed}&quest=${new Date().toISOString().split('T')[0]}`;
-  alert(`Quest attached! Share: ${url}`);
-  // Optional: Save to localStorage for "My Adventures"
-}
-loadQuest();
-</script>
+    <script>
+        const REPO = 'NAGOHUSA/MCDAILYQUESTS.io';
+        async function loadQuest(date = new Date().toISOString().split('T')[0]) {
+            const url = `https://raw.githubusercontent.com/${REPO}/main/quests/${date}.json`;
+            try {
+                const res = await fetch(url);
+                const quest = await res.json();
+                document.getElementById('quest').innerHTML = `
+                    <div style="background:#1a1a1a;padding:20px;border-radius:8px;">
+                        <h2 style="color:#FFEB3B;">${quest.title}</h2>
+                        <p><em>${quest.lore}</em></p>
+                        <h3>Steps:</h3><ol>${quest.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+                        <h3>Reward:</h3><p>${quest.reward}</p>
+                        <h3>Start:</h3><p>${quest.biomeHint}</p>
+                        <small>Quest ${quest.id} | <a href="https://github.com/${REPO}/blob/main/quests/${date}.json" target="_blank">Raw</a></small>
+                    </div>
+                `;
+            } catch {
+                document.getElementById('quest').innerHTML = `<p>Quest brewing... <a href="?date=2025-11-04">Try Day 1</a></p>`;
+            }
+        }
+        function attachQuest() {
+            const seed = document.getElementById('seed').value.trim();
+            if (!seed) return alert('Seed plz!');
+            const date = new Date().toISOString().split('T')[0];
+            const share = `${window.location}?seed=${seed}&quest=${date}`;
+            localStorage.setItem('nagohQuests', JSON.stringify([...JSON.parse(localStorage.getItem('nagohQuests')||'[]'), {seed, quest:date}]));
+            document.getElementById('shareUrl').innerHTML = `Share: <a href="${share}">${share}</a>`;
+            document.getElementById('shareUrl').style.display = 'block';
+            alert('Quest loaded! Post to r/Minecraft 🚀');
+        }
+        loadQuest(new URLSearchParams(location.search).get('date') || null);
+    </script>
+</body>
+</html>
