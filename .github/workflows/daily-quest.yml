@@ -1,5 +1,5 @@
-# .github/workflows/daily-quest.yml
 name: Generate Daily Quest
+
 on:
   schedule:
     - cron: '0 0 * * *'  # Midnight UTC
@@ -10,14 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Generate Quest
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_MCDAILYQUESTS }}
         run: node generate-quest.js
-      
-      - name: Commit & Push
-        run: |
-          git config user.name "Nagoh Bot"
+
+      - run: |
+          git config user.name "Nagoh Quest Bot"
           git config user.email "bot@nagoh.us"
-          git add quests/$(date +%F).json
-          git commit -m "Quest of the Day: $(date +%F)"
+          git add quests/
+          git diff --staged --quiet || git commit -m "🌟 Daily Quest: $(date +%F)"
           git push
