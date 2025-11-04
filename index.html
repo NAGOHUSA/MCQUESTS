@@ -1,0 +1,26 @@
+<!-- public/index.html -->
+<h1>Quest of the Day</h1>
+<div id="quest"></div>
+<input id="seed" placeholder="Enter your world seed..." />
+<button onclick="attachQuest()">Add to My World</button>
+
+<script>
+async function loadQuest() {
+  const today = new Date().toISOString().split('T')[0];
+  const res = await fetch(`https://raw.githubusercontent.com/yourname/nagoh-quests/main/quests/${today}.json`);
+  const quest = await res.json();
+  document.getElementById('quest').innerHTML = `
+    <h2>${quest.title}</h2>
+    <p><em>${quest.lore}</em></p>
+    <ol>${quest.steps.map(s => `<li>${s}</li>`).join('')}</ol>
+  `;
+}
+
+function attachQuest() {
+  const seed = document.getElementById('seed').value;
+  const url = `${window.location}?seed=${seed}&quest=${new Date().toISOString().split('T')[0]}`;
+  alert(`Quest attached! Share: ${url}`);
+  // Optional: Save to localStorage for "My Adventures"
+}
+loadQuest();
+</script>
