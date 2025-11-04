@@ -1,0 +1,23 @@
+# .github/workflows/daily-quest.yml
+name: Generate Daily Quest
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Midnight UTC
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Generate Quest
+        run: node generate-quest.js
+      
+      - name: Commit & Push
+        run: |
+          git config user.name "Nagoh Bot"
+          git config user.email "bot@nagoh.us"
+          git add quests/$(date +%F).json
+          git commit -m "Quest of the Day: $(date +%F)"
+          git push
