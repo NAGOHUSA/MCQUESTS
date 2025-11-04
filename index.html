@@ -323,3 +323,169 @@
 
     <p><a href="https://buymeacoffee.com/nagoh" target="_blank" style="color: #FF9800;">Fuel Quests</a></p>
   </div>
+  <!-- INFO MODAL -->
+  <div id="infoModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeInfo()">X</span>
+      <h2 style="text-align:center; color:#FFEB3B;">MC Daily Quests – How It Works</h2>
+      <p><strong>One epic vanilla Minecraft quest every day. No mods. Pure adventure.</strong></p>
+
+      <h3>What is this?</h3>
+      <ul>
+        <li>AI generates a <strong>new quest daily</strong> at midnight UTC</li>
+        <li>Works in <strong>any world seed</strong> (Java or Bedrock)</li>
+        <li>100% vanilla – no mods, no commands</li>
+        <li>Quests focus on <em>exploration, puzzles, light survival</em></li>
+      </ul>
+
+      <h3>How to Play (3 Steps)</h3>
+      <ol>
+        <li><strong>Read today’s quest</strong> (title, lore, steps)</li>
+        <li><strong>Enter your world seed</strong> → click “Attach & Share”</li>
+        <li><strong>Play in your world!</strong> Share progress with friends</li>
+      </ol>
+
+      <h3>Voting (1 per day)</h3>
+      <ul>
+        <li>Click the <span class="material-icons" style="font-size:1rem;vertical-align:middle;">thumb_up</span> under any quest</li>
+        <li>You get <strong>1 vote per day</strong> (resets at midnight)</li>
+        <li>Top-voted quest gets a <strong>gold star</strong> badge</li>
+        <li>Optional: Check “Quest Complete” to auto-vote</li>
+      </ul>
+
+      <h3>Pro Tips</h3>
+      <ul>
+        <li>Share your seed link: <code>nagoh.us/MCQUESTS/?seed=12345</code></li>
+        <li>Check past quests in the <strong>Archive</strong> (now grid-style!)</li>
+        <li>Leaderboard and stats are coming soon!</li>
+      </ul>
+
+      <p style="text-align:center; margin-top:20px;">
+        <a href="https://github.com/NAGOHUSA/MCQUESTS" target="_blank">View on GitHub</a> • 
+        <a href="https://buymeacoffee.com/nagoh" target="_blank">Fuel More Quests</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- QR Code + Logic -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode.js@1.0.0/lib/qrcode.min.js"></script>
+  <script>
+    const REPO = 'NAGOHUSA/MCQUESTS';
+    const BASE_PATH = '/MCQUESTS/';
+    const today = new Date().toISOString().split('T')[0];
+    const VOTES_KEY = 'nagohQuestVotes';
+    const LAST_VOTE_KEY = 'nagohLastVoteDate';
+
+    function getVotes() { return JSON.parse(localStorage.getItem(VOTES_KEY) || '{}'); }
+    function saveVotes(votes) { localStorage.setItem(VOTES_KEY, JSON.stringify(votes)); }
+    function canVoteToday() {
+      const last = localStorage.getItem(LAST_VOTE_KEY);
+      if (!last) return true;
+      return new Date().toDateString() !== new Date(last).toDateString();
+    }
+
+    function voteForQuest(questId) {
+      if (!canVoteToday()) {
+        alert('1 vote per day—check back tomorrow!');
+        return false;
+      }
+      const votes = getVotes();
+      votes[questId] = (votes[questId] || 0) + 1;
+      saveVotes(votes);
+      localStorage.setItem(LAST_VOTE_KEY, new Date().toISOString());
+      return true;
+    }
+
+    function openInfo() { document.getElementById('infoModal').style.display = 'flex'; }
+    function closeInfo() { document.getElementById('infoModal').style.display = 'none'; }
+    window.onclick = function(e) { if (e.target === document.getElementById('infoModal')) closeInfo(); }
+
+    async function getAvailableQuestDates() {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/quests`);
+        const files = await res.json();
+        return files
+          .filter(f => f.name.match(/^\d{4}-\d{2}-\d{2}\.json$/))
+          .map(f => ({ date: f.name.replace('.json', ''), id: f.name.replace('.json', '').replace(/-/g, '') }))
+          .sort((a, b) => b.date.localeCompare(a.date));
+      } catch (err) {
+        console.error('API failed:', err);
+        return [];
+      }
+    }
+
+    async function loadQuest(date, container = 'quest', showVote = false, questId) {
+      const url = `https://raw.githubusercontent.com/${REPO}/main/quests/${date}.json`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Not found');
+        const q = await res.json();
+        const votes = getVotes();
+        const voteCount = votes[questId] || 0;
+        const isTop = Object.entries(votes).every(([k, v]) => k === questId || v <= voteCount);
+        const voteBtn = showVote ? `<button class="vote-btn" onclick="if(voteForQuest('${questId}')) this.classList.add('voted');"><span class="material-icons">thumb_up</span> <span class="votes">(${voteCount})</span></button>` : '';
+        const badge = isTop && voteCount > 0 ? '<div class="badge">1st</div>' : '';
+        const html = `
+          ${badge}
+          <h2>${q.title}</h2>
+          <p><em>${q.lore}</em></p>
+          <h3>Steps:</h3><ol>${q.steps.map(s=>`<li>${s}</li>`).join('')}</ol>
+          <h3>Reward:</h3><p>${q.reward}</p>
+          <p class="biome">Start: ${q.biomeHint}</p>
+          <small>Quest ${q.id}</small>
+          ${voteBtn}
+          ${showVote ? `<label class="complete-check"><input type="checkbox" onchange="if(this.checked) voteForQuest('${questId}');"> Quest Complete (Auto-Vote)</label>` : ''}
+        `;
+        document.getElementById(container).innerHTML = html;
+      } catch {
+        document.getElementById(container).innerHTML = `<p class="empty">Quest ${date} not ready.</p>`;
+      }
+    }
+
+    function attachQuest() {
+      const seed = document.getElementById('seed').value.trim();
+      if (!seed) return alert('Enter a seed!');
+      const share = `${window.location.origin}${BASE_PATH}?seed=${seed}&quest=${today}`;
+      const log = JSON.parse(localStorage.getItem('nagohQuests') || '[]');
+      log.push({ seed, quest: today, date: new Date().toLocaleDateString() });
+      localStorage.setItem('nagohQuests', JSON.stringify(log));
+      document.getElementById('shareUrl').innerHTML = `Share: <a href="${share}" target="_blank">${share}</a>`;
+      document.getElementById('shareUrl').style.display = 'block';
+      new QRCode(document.getElementById("qrCode"), { text: share, width: 128, height: 128 });
+      updateLog();
+    }
+
+    function updateLog() {
+      const log = JSON.parse(localStorage.getItem('nagohQuests') || '[]');
+      const div = document.getElementById('log');
+      div.innerHTML = log.length === 0 ? 'No quests attached yet.' : log.map(l => `• ${l.date} – Seed <strong>${l.seed}</strong> – Quest ${l.quest}`).join('<br>');
+    }
+
+    async function loadArchive() {
+      const archive = document.getElementById('archive');
+      archive.innerHTML = `<div class="empty">Loading quests...</div>`;
+      const questFiles = await getAvailableQuestDates();
+      if (questFiles.length === 0) { archive.innerHTML = `<div class="empty">No quests yet!</div>`; return; }
+      archive.innerHTML = '';
+      questFiles.slice(0, 9).forEach((q, i) => {
+        const card = document.createElement('div');
+        card.className = 'archive-card';
+        card.innerHTML = `<div id="a${i}"><small>Loading...</small></div>`;
+        archive.appendChild(card);
+        loadQuest(q.date, `a${i}`, true, q.id);
+      });
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const date = params.get('date') || today;
+    (async () => {
+      const questFiles = await getAvailableQuestDates();
+      if (questFiles.some(q => q.date === date)) {
+        loadQuest(date, 'quest', true, questFiles.find(q => q.date === date).id);
+      }
+      loadArchive();
+      updateLog();
+    })();
+  </script>
+</body>
+</html>
