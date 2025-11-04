@@ -1,0 +1,13 @@
+{
+  "date": "2025-11-07",
+  "title": "Crimson Canopy Curse",
+  "lore": "In the nether's crimson forests, cursed vines hide a fungal throne. Climb without axes to claim the hoglin rider's boon.",
+  "steps": [
+    "Enter a crimson forest without breaking vines.",
+    "Follow glowing particles to a warped wart block throne.",
+    "Offer a gold ingot—spawn a tamed hoglin with saddle."
+  ],
+  "reward": "Crimson saddle for infinite hoglin mounts.",
+  "biomeHint": "Crimson Forest (Nether)",
+  "id": "20251107"
+}
