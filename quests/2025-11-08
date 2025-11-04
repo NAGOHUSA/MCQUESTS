@@ -1,0 +1,13 @@
+{
+  "date": "2025-11-08",
+  "title": "The Frozen Forge",
+  "lore": "Icy peaks guard a smith's eternal flame, fueled by powder snow secrets. Forge the frostpick to mine unbreakable ice.",
+  "steps": [
+    "Build a snow golem army (3+) in icy peaks.",
+    "Lead them to a packed ice cave—their tears reveal blaze rod.",
+    "Smith diamond pickaxe + blaze rod for Frostpick."
+  ],
+  "reward": "Frostpick that mines blue ice instantly.",
+  "biomeHint": "Icy Peaks",
+  "id": "20251108"
+}
