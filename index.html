@@ -45,6 +45,12 @@
     .success{color:#9ff6c8}
     .warn{color:var(--danger)}
     footer{opacity:.7;margin-top:18px;font-size:12px}
+    /* completion chips */
+    .step{display:flex;align-items:flex-start;gap:10px;margin:8px 0}
+    .chk{accent-color:#31e081;min-width:18px;min-height:18px;margin-top:2px}
+    .step.done span{text-decoration:line-through;opacity:.75}
+    /* leaderboard tags */
+    .lb-pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);font-size:11px}
   </style>
 </head>
 <body>
@@ -67,6 +73,7 @@
             <div class="row">
               <span class="pill" id="questBiome">Biome: —</span>
               <span class="pill" id="questReward">Reward: —</span>
+              <span class="pill" id="questTheme">Theme: —</span>
             </div>
             <span class="pill">ID: <span id="questId" class="kbd"></span></span>
           </div>
@@ -76,15 +83,16 @@
 
           <div class="hr"></div>
           <div>
-            <strong>Steps (1–3):</strong>
-            <ol id="questSteps" style="margin-top:8px"></ol>
+            <strong>Steps:</strong>
+            <div id="questSteps" style="margin-top:8px"></div>
+            <div id="questProgress" class="hint" style="margin-top:6px"></div>
           </div>
 
           <div class="hr"></div>
 
           <div class="row" style="justify-content:space-between;align-items:center">
             <div>
-              <div class="muted hint">Rate today’s quest (once per day):</div>
+              <div class="muted hint">Rate today’s quest (once per device):</div>
               <div class="stars" id="starRow" aria-label="Rate 1 to 5">
                 <span class="star off" data-star="1">★</span>
                 <span class="star off" data-star="2">★</span>
@@ -114,13 +122,13 @@
         <h2>How it works</h2>
         <ul style="margin:8px 0 10px 18px;line-height:1.5">
           <li>A new <strong>vanilla</strong> quest drops every day. No commands, no mods—<em>works in any world/seed</em>.</li>
-          <li>Complete it solo or with friends, then <strong>rate it</strong> once per day.</li>
-          <li>Votes update the <strong>Leaderboard</strong> (top players & communities).</li>
-          <li>See older quests in the <strong>Archive</strong>.</li>
+          <li>Check off steps as you go—progress is saved <strong>on your device</strong>.</li>
+          <li>Rate it with <strong>stars</strong> (once per device). We record anonymous votes in Supabase.</li>
+          <li>See older quests in the <strong>Archive</strong> and the <strong>Top-Rated Leaderboard</strong>.</li>
         </ul>
         <div class="hr"></div>
-        <h2>Leaderboard</h2>
-        <div class="hint muted">Updates live from Google Sheets.</div>
+        <h2>Top-Rated Leaderboard</h2>
+        <div class="hint muted">Based on average stars (Supabase free tier).</div>
         <div id="lbWrap" style="margin-top:8px">
           <div class="muted">Loading leaderboard…</div>
         </div>
@@ -128,32 +136,44 @@
     </div>
 
     <footer>
-      Data: <span class="kbd">/quests/*.json</span> from GitHub • Votes via Apps Script • Sheet-backed leaderboard.
+      Data: <span class="kbd">/quests/*.json</span> from GitHub • Votes via Supabase (insert-only RLS) • No Google Apps Script required.
     </footer>
   </div>
 
+<!-- =========================
+     SUPABASE CONFIG (EDIT)
+     ========================= -->
+<script>
+  // Paste your project creds (safe to expose anon key with RLS)
+  window.SUPABASE_REST_URL = "https://YOUR_PROJECT.supabase.co/rest/v1";
+  window.SUPABASE_ANON_KEY = "YOUR_PUBLIC_ANON_KEY";
+
+  // Optional: if you only created the earlier 'votes' table/use 'votes_aggregate'
+  // set this to true and we’ll map stars→(fun/okay/hard) and read that view.
+  window.SUPABASE_COMPAT_VOTES = false; // set true if using votes/votes_aggregate
+
+  // View/table names (change if you used different names)
+  window.SUPABASE_TABLE_RATINGS = "ratings";
+  window.SUPABASE_VIEW_RATINGS_AGG = "ratings_aggregate";
+  window.SUPABASE_TABLE_VOTES = "votes";
+  window.SUPABASE_VIEW_VOTES_AGG = "votes_aggregate";
+</script>
+
 <script>
 /** =======================
- *  CONFIG — EDIT THESE
+ *  CONTENT CONFIG
  *  ======================= */
 const RAW_BASE = "https://raw.githubusercontent.com/NAGOHUSA/MCQUESTS/main/quests";
 const CONTENTS_API = "https://api.github.com/repos/NAGOHUSA/MCQUESTS/contents/quests";
-// After you deploy your Apps Script as a Web app, paste the URL below (ends with /exec)
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxB2QCztlOTqOCkgQxVQ7p2sSlcpRSzSUq-gN2CqfllbGndQP3xPYs6mAEDYA3vUyXlJQ/exec"; // e.g., https://script.google.com/macros/s/AKfycby.../exec
-// Optional: sheet name for leaderboard (used by Apps Script)
-const LEADERBOARD_SHEET = "Leaderboard";
 
-/** ===== Utilities ===== */
 const $ = (sel)=>document.querySelector(sel);
 const todayStr = (d=new Date())=>{
-  // Use user's local date for "today"
   const y = d.getFullYear();
   const m = String(d.getMonth()+1).padStart(2,'0');
   const dd = String(d.getDate()).padStart(2,'0');
   return `${y}-${m}-${dd}`;
 };
 const fmt = (n)=>n.toLocaleString();
-
 function toast(el,msg,cls=""){ el.textContent = msg; el.className = `hint ${cls}`; }
 
 /** ===== State ===== */
@@ -181,11 +201,10 @@ async function loadToday(){
     currentQuest = await getQuest(date);
     renderQuest(currentQuest, date);
   }catch(e){
-    // fallback to latest available file from /contents
     const items = await (await fetch(CONTENTS_API, {cache:"no-store"})).json();
     const files = (Array.isArray(items)?items:[]).filter(x=>x.type==="file" && x.name.endsWith(".json"));
     if(!files.length) throw e;
-    files.sort((a,b)=> b.name.localeCompare(a.name)); // YYYY-MM-DD.json -> lexicographic sort works
+    files.sort((a,b)=> b.name.localeCompare(a.name));
     const latest = files[0].name.replace(".json","");
     $("#questDate").textContent = `${date} (showing latest available: ${latest})`;
     currentQuest = await getQuest(latest);
@@ -193,41 +212,65 @@ async function loadToday(){
   }
 }
 
-/** ===== Render quest ===== */
+/** ===== Render quest + completion checkboxes ===== */
 function renderQuest(q, dateKey){
   $("#questLoading").style.display="none";
   $("#questBox").style.display="block";
 
-  // Flexible field mapping (handles different camel/kebab cases)
   const title = q.title || q.name || q.questTitle || "Untitled Quest";
   const lore  = q.lore || q.description || q.flavor || "";
   const steps = q.steps || q.objectives || q.tasks || [];
   const biome = q.biome_hint || q.biome || "Any";
   const reward = q.reward || q.points || "Bragging rights";
   const id = q.id || dateKey;
+  const theme = q.theme || "Weekly Theme";
+  const color = q.color || "#5c7cfa";
+
+  // accent chip color
+  document.documentElement.style.setProperty("--accent", color);
 
   $("#questTitle").textContent = title;
   $("#questLore").textContent = lore;
   $("#questBiome").textContent = "Biome: " + biome;
   $("#questReward").textContent = "Reward: " + reward;
+  $("#questTheme").textContent = "Theme: " + theme;
   $("#questId").textContent = id;
 
+  // Steps with completion (localStorage)
   const list = $("#questSteps");
   list.innerHTML = "";
-  (steps || []).slice(0,3).forEach(s=>{
-    const li = document.createElement("li");
-    li.textContent = s;
-    list.appendChild(li);
+  const key = (i)=>`mcq:${id}:step:${i}:done`;
+  const checkRender = ()=>{
+    const total = steps.length;
+    const done = steps.filter((_,i)=> localStorage.getItem(key(i))==="1").length;
+    $("#questProgress").textContent = `Progress: ${done}/${total} steps complete`;
+  };
+  (steps || []).slice(0,3).forEach((s,i)=>{
+    const wrap = document.createElement("div");
+    wrap.className = "step";
+    const chk = document.createElement("input");
+    chk.type = "checkbox";
+    chk.className = "chk";
+    chk.checked = localStorage.getItem(key(i))==="1";
+    const label = document.createElement("span");
+    label.textContent = s;
+    wrap.appendChild(chk); wrap.appendChild(label);
+    if(chk.checked) wrap.classList.add("done");
+    chk.addEventListener("change", ()=>{
+      localStorage.setItem(key(i), chk.checked ? "1" : "0");
+      wrap.classList.toggle("done", chk.checked);
+      checkRender();
+    });
+    list.appendChild(wrap);
   });
+  checkRender();
 
-  // load stats for this quest
-  loadStats(dateKey);
-
-  // voting guard
-  const votedKey = `voted-${dateKey}`;
+  // load stats + voting guard
+  loadStats(id, theme);
+  const votedKey = `voted-${id}`;
   if(localStorage.getItem(votedKey)){
     $("#voteBtn").disabled = true;
-    toast($("#voteMsg"), "You already voted today. Come back tomorrow!", "success");
+    toast($("#voteMsg"), "You already voted for this quest on this device.", "success");
   }else{
     toast($("#voteMsg"), "Tap a star, then Submit Vote.");
   }
@@ -244,45 +287,156 @@ function wireStars(){
   });
 }
 
-/** ===== Submit vote (once/day) ===== */
+/** =========================
+ *  SUPABASE helpers
+ *  ========================= */
+function supaCfgOk(){
+  return !!(window.SUPABASE_REST_URL && window.SUPABASE_ANON_KEY);
+}
+async function supaInsertRating({date,theme,stars}){
+  const url = `${window.SUPABASE_REST_URL}/${window.SUPABASE_TABLE_RATINGS}`;
+  const user_hash = await sha16(navigator.userAgent + new Date().toDateString());
+  const payload = { date, theme, stars, ua: navigator.userAgent, user_hash };
+  const res = await fetch(url, {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey": window.SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${window.SUPABASE_ANON_KEY}`,
+      "Prefer":"return=minimal"
+    },
+    body: JSON.stringify(payload)
+  });
+  return res.ok;
+}
+async function supaInsertVoteCompat({date,theme,stars}){
+  // Map stars → option for the older 'votes' table
+  const option = stars>=4 ? "fun" : (stars===3 ? "okay" : "hard");
+  const url = `${window.SUPABASE_REST_URL}/${window.SUPABASE_TABLE_VOTES}`;
+  const user_hash = await sha16(navigator.userAgent + new Date().toDateString());
+  const payload = { date, theme, option, ua: navigator.userAgent, user_hash };
+  const res = await fetch(url, {
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      "apikey": window.SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${window.SUPABASE_ANON_KEY}`,
+      "Prefer":"return=minimal"
+    },
+    body: JSON.stringify(payload)
+  });
+  return res.ok;
+}
+async function supaGetAggregate(date){
+  // Try ratings_aggregate first; fallback to votes_aggregate
+  const urlRatings = `${window.SUPABASE_REST_URL}/${window.SUPABASE_VIEW_RATINGS_AGG}?date=eq.${encodeURIComponent(date)}`;
+  const urlVotes = `${window.SUPABASE_REST_URL}/${window.SUPABASE_VIEW_VOTES_AGG}?date=eq.${encodeURIComponent(date)}`;
+
+  const headers = { "apikey": window.SUPABASE_ANON_KEY, "Authorization": `Bearer ${window.SUPABASE_ANON_KEY}` };
+
+  // prefer ratings_aggregate
+  try{
+    const r = await fetch(urlRatings, { headers, cache:"no-store" });
+    if(r.ok){
+      const arr = await r.json();
+      if(Array.isArray(arr) && arr.length){
+        // pick first row (date+theme)
+        const row = arr[0];
+        return { count: Number(row.count||0), avg: Number(row.avg||0) };
+      }
+    }
+  }catch(_) {}
+  // fallback: votes_aggregate (compute avg)
+  try{
+    const r = await fetch(urlVotes, { headers, cache:"no-store" });
+    if(r.ok){
+      const rows = await r.json();
+      if(Array.isArray(rows) && rows.length){
+        const counts = rows.reduce((m,row)=>{ m[row.option]=Number(row.count)||0; return m; },{});
+        const total = (counts.fun||0)+(counts.okay||0)+(counts.hard||0);
+        const avg = total ? (((counts.fun||0)*5)+((counts.okay||0)*3)+((counts.hard||0)*2))/total : 0;
+        return { count: total, avg };
+      }
+    }
+  }catch(_) {}
+  return { count: 0, avg: 0 };
+}
+async function supaGetLeaderboard(limit=10){
+  // Prefer ratings_aggregate ordered by avg desc / count desc
+  const urlRatings = `${window.SUPABASE_REST_URL}/${window.SUPABASE_VIEW_RATINGS_AGG}?select=date,theme,count,avg&order=avg.desc,count.desc&limit=${limit}`;
+  const urlVotes = `${window.SUPABASE_REST_URL}/${window.SUPABASE_VIEW_VOTES_AGG}?select=date,option,count&limit=10000`;
+  const headers = { "apikey": window.SUPABASE_ANON_KEY, "Authorization": `Bearer ${window.SUPABASE_ANON_KEY}` };
+
+  try{
+    const r = await fetch(urlRatings, { headers, cache:"no-store" });
+    if(r.ok){
+      const arr = await r.json();
+      if(Array.isArray(arr) && arr.length) return arr.map(x=>({date:x.date, theme:x.theme, count:Number(x.count), avg:Number(x.avg)}));
+    }
+  }catch(_){}
+
+  // fallback: compute from votes_aggregate
+  try{
+    const r = await fetch(urlVotes, { headers, cache:"no-store" });
+    if(r.ok){
+      const rows = await r.json();
+      const byDate = {};
+      rows.forEach(row=>{
+        const d = row.date;
+        byDate[d] = byDate[d] || {date:d, count:0, sum:0};
+        const c = Number(row.count||0);
+        const val = row.option==="fun"?5: row.option==="okay"?3:2;
+        byDate[d].count += c;
+        byDate[d].sum += c*val;
+      });
+      const arr = Object.values(byDate).map(x=>({date:x.date, theme:"—", count:x.count, avg: x.count? x.sum/x.count : 0}));
+      arr.sort((a,b)=> b.avg - a.avg || b.count - a.count);
+      return arr.slice(0, limit);
+    }
+  }catch(_){}
+  return [];
+}
+async function sha16(s){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,16);
+}
+
+/** ===== Submit vote ===== */
 async function submitVote(){
-  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_")){
-    toast($("#voteMsg"), "Voting not configured yet. Add your Apps Script Web App URL in the config.", "warn");
+  if(!supaCfgOk()){
+    toast($("#voteMsg"), "Supabase not configured. Add REST URL + anon key.", "warn");
     return;
   }
   if(!currentQuest){ return; }
   if(!selectedStars){ toast($("#voteMsg"), "Choose a rating first (1–5 stars).", "warn"); return;}
 
   const dateKey = $("#questId").textContent || todayStr();
+  const theme = $("#questTheme").textContent.replace(/^Theme:\s*/,'') || "Theme";
   const votedKey = `voted-${dateKey}`;
   if(localStorage.getItem(votedKey)){
-    toast($("#voteMsg"), "You already voted today. Thanks!", "success"); return;
+    toast($("#voteMsg"), "You already voted for this quest on this device.", "success"); return;
   }
 
   $("#voteBtn").disabled = true;
   toast($("#voteMsg"), "Submitting your vote…");
 
-  const payload = {
-    action: "vote",
-    date: dateKey,
-    rating: selectedStars,
-    userId
-  };
-
   try{
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload),
-    });
-    if(!res.ok) throw new Error("Vote error " + res.status);
-    const data = await res.json();
+    let ok = false;
+    if(!window.SUPABASE_COMPAT_VOTES){
+      ok = await supaInsertRating({date:dateKey, theme, stars:selectedStars});
+      if(!ok){
+        // if ratings table missing, fallback to votes compat
+        ok = await supaInsertVoteCompat({date:dateKey, theme, stars:selectedStars});
+      }
+    }else{
+      ok = await supaInsertVoteCompat({date:dateKey, theme, stars:selectedStars});
+    }
 
+    if(!ok) throw new Error("insert failed");
     localStorage.setItem(votedKey, String(selectedStars));
     toast($("#voteMsg"), "Vote saved. Thank you!", "success");
-    if(data && data.stats){
-      $("#statsLine").textContent = `Ratings: ${fmt(data.stats.count)} • Avg ${Number(data.stats.avg).toFixed(2)} ★`;
-    }
+    const stats = await supaGetAggregate(dateKey);
+    $("#statsLine").textContent = `Ratings: ${fmt(stats.count)} • Avg ${Number(stats.avg||0).toFixed(2)} ★`;
   }catch(err){
     console.error(err);
     $("#voteBtn").disabled = false;
@@ -290,7 +444,57 @@ async function submitVote(){
   }
 }
 
-/** ===== Load archive list from GitHub contents ===== */
+/** ===== Stats for a given date (ratings) ===== */
+async function loadStats(dateKey){
+  if(!supaCfgOk()){
+    $("#statsLine").textContent = `Ratings: configure Supabase to see live stats.`;
+    return;
+  }
+  const stats = await supaGetAggregate(dateKey);
+  $("#statsLine").textContent = stats.count ? `Ratings: ${fmt(stats.count)} • Avg ${Number(stats.avg||0).toFixed(2)} ★` : `Ratings: —`;
+}
+
+/** ===== Leaderboard (top by avg) ===== */
+async function loadLeaderboard(){
+  const wrap = $("#lbWrap");
+  if(!supaCfgOk()){
+    wrap.innerHTML = `<div class="muted">Add Supabase REST URL + anon key to enable the leaderboard.</div>`;
+    return;
+  }
+  const rows = await supaGetLeaderboard(10);
+  if(!rows.length){ wrap.innerHTML = `<div class="muted">No ratings yet.</div>`; return; }
+  const table = document.createElement("table");
+  table.innerHTML = `
+    <thead><tr><th>#</th><th>Date</th><th>Avg ★</th><th>Votes</th><th></th></tr></thead>
+    <tbody>${rows.map((r,i)=>`
+      <tr>
+        <td>${i+1}</td>
+        <td><a href="#" data-date="${r.date}" class="open-date">${r.date}</a></td>
+        <td>${(r.avg||0).toFixed(2)}</td>
+        <td>${fmt(Number(r.count||0))}</td>
+        <td><span class="lb-pill">${r.theme||"—"}</span></td>
+      </tr>`).join("")}</tbody>
+  `;
+  wrap.innerHTML = "";
+  wrap.appendChild(table);
+
+  // click row to open that quest
+  wrap.querySelectorAll("a.open-date").forEach(a=>{
+    a.addEventListener("click", async e=>{
+      e.preventDefault();
+      const date = a.dataset.date;
+      try{
+        const q = await getQuest(date);
+        $("#questDate").textContent = date;
+        currentQuest = q;
+        renderQuest(q, date);
+        window.scrollTo({top:0,behavior:"smooth"});
+      }catch(_){ alert("Quest JSON not found for that date."); }
+    });
+  });
+}
+
+/** ===== Archive ===== */
 async function loadArchive(){
   const res = await fetch(CONTENTS_API, {cache:"no-store"});
   const items = await res.json();
@@ -317,54 +521,6 @@ async function loadArchive(){
     });
     container.appendChild(el);
   });
-}
-
-/** ===== Stats for a given date (ratings) ===== */
-async function loadStats(dateKey){
-  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_")){
-    $("#statsLine").textContent = `Ratings: setup Apps Script to see live stats.`;
-    return;
-  }
-  try{
-    const url = new URL(APPS_SCRIPT_URL);
-    url.searchParams.set("action","stats");
-    url.searchParams.set("date", dateKey);
-    const res = await fetch(url.toString(), {cache:"no-store"});
-    if(!res.ok) throw new Error("stats " + res.status);
-    const j = await res.json();
-    if(j && j.stats){
-      $("#statsLine").textContent = `Ratings: ${fmt(j.stats.count)} • Avg ${Number(j.stats.avg).toFixed(2)} ★`;
-    }
-  }catch(err){
-    $("#statsLine").textContent = `Ratings: —`;
-  }
-}
-
-/** ===== Leaderboard ===== */
-async function loadLeaderboard(){
-  const wrap = $("#lbWrap");
-  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_")){
-    wrap.innerHTML = `<div class="muted">Connect your Apps Script URL to show the live leaderboard.</div>`;
-    return;
-  }
-  try{
-    const url = new URL(APPS_SCRIPT_URL);
-    url.searchParams.set("action","leaderboard");
-    const res = await fetch(url.toString(), {cache:"no-store"});
-    if(!res.ok) throw new Error("lb " + res.status);
-    const j = await res.json();
-    const rows = (j && j.rows) ? j.rows : [];
-    if(!rows.length){ wrap.innerHTML = `<div class="muted">No leaderboard entries yet.</div>`; return; }
-    const table = document.createElement("table");
-    table.innerHTML = `
-      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
-      <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${(r.player||"—")}</td><td>${fmt(Number(r.score||0))}</td></tr>`).join("")}</tbody>
-    `;
-    wrap.innerHTML = "";
-    wrap.appendChild(table);
-  }catch(err){
-    wrap.innerHTML = `<div class="warn">⚠️ Error loading leaderboard</div><div class="hint">Make sure the Apps Script Web App returns JSON for <span class="kbd">action=leaderboard</span>.</div>`;
-  }
 }
 
 /** ===== Init ===== */
