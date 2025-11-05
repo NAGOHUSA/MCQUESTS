@@ -1,102 +1,133 @@
+#!/usr/bin/env node
 /**
- * generate-quest.js
- * Auto-generates ONE epic vanilla Minecraft quest per day
- * Runs via GitHub Actions at midnight UTC
- * Uses Groq + Llama 3.1 8B for fast, structured output
- * Saves to: quests/2025-11-04.json
+ * Minecraft Daily Quest generator (vanilla-safe)
+ * - Outputs quests/YYYY-MM-DD.json
+ * - 1–3 steps
+ * - Seed-agnostic, no commands/mods, no unobtainables
+ * - Difficulty scales lightly by weekday
  */
 
-const fs = require('fs');
-const path = require('path');
-const { groq } = require('@ai-sdk/groq');
-const { generateObject } = require('ai');
-const { z } = require('zod');
+const fs = require("fs");
+const path = require("path");
 
-// === CONFIG ===
-const REPO = 'NAGOHUSA/MCQUESTS'; // Your repo
-const QUESTS_DIR = 'quests';      // Folder to save JSONs
-const MODEL = 'llama-3.1-8b-instant'; // Fast & free tier
+const OUT_DIR = "quests";
+const DATE = process.env.DATE || new Date().toISOString().slice(0, 10);
+const OUT = process.env.OUT || path.join(OUT_DIR, `${DATE}.json`);
 
-// === MAIN FUNCTION ===
-async function generateQuest() {
-  // Get today's date in YYYY-MM-DD
-  const today = new Date().toISOString().split('T')[0];
-  const outputPath = path.join(QUESTS_DIR, `${today}.json`);
+// ——— Canonical, seed-agnostic, vanilla-safe building blocks ———
+const actionsCore = [
+  // Gathering & basic crafting
+  "Gather 20 oak logs and craft a crafting table, sticks, and a stone pickaxe.",
+  "Mine and smelt iron to obtain 3 iron ingots; craft a bucket.",
+  "Craft a shield and block at least one skeleton arrow.",
+  "Collect 16 sand and smelt into 16 glass.",
+  "Craft a boat and travel 300 blocks by water (estimating distance is fine).",
 
-  // Ensure quests directory exists
-  if (!fs.existsSync(QUESTS_DIR)) {
-    fs.mkdirSync(QUESTS_DIR, { recursive: true });
-    console.log(`Created directory: ${QUESTS_DIR}`);
+  // Food & farming
+  "Plant wheat seeds and harvest at least 12 wheat.",
+  "Cook any 5 raw meats or fish in a furnace, smoker, or campfire.",
+  "Craft a composter and generate at least 1 bone meal from crops.",
+  "Breed two cows (or two sheep, or two pigs).",
+
+  // Utility & exploration (structure-free or common)
+  "Place a campfire and use it to cook at least 2 items.",
+  "Craft a map (paper + compass) and fully reveal at least 20% by exploring.",
+  "Find and collect 16 coal (torches encouraged!).",
+  "Craft a bed of any color and sleep to set your spawn.",
+
+  // Beekeeping (vanilla-safe)
+  "Find a bee nest or beehive; place a campfire underneath and shear it to collect at least 1 honeycomb.",
+
+  // Mushrooms (vanilla-safe)
+  "Collect at least 6 mushrooms (any mix of red and brown).",
+];
+
+const actionsAdv = [
+  // Brewing (vanilla recipes only)
+  "Brew a Potion of Swiftness (sugar + awkward potion) and drink it.",
+  "Brew a Potion of Night Vision (golden carrot + awkward potion) and explore for 2 minutes.",
+  // Suspicious stew (vanilla, no cauldron)
+  "Craft a Suspicious Stew using a valid flower (e.g., Oxeye Daisy for Regeneration) and eat it.",
+
+  // Trading (realistic outcomes)
+  "Trade with any villager until you obtain at least 1 emerald.",
+  "Ring a village bell and fend off a small group of nearby mobs at night (play it safe!).",
+
+  // Treasure (shipwreck/ruins are common; allow fallback)
+  "Loot a shipwreck **or** ocean ruins chest. If none found after 10 minutes, skip this step.",
+];
+
+const biomeHints = [
+  "Any",
+  "Plains",
+  "Forest",
+  "Taiga",
+  "Birch Forest",
+  "Savanna",
+  "Desert (carry water!)",
+  "Beach / Ocean",
+  "Windswept Hills",
+];
+
+const rewards = [
+  "Bragging Rights",
+  "1 Emerald (self-awarded if you traded!)",
+  "A fresh set of iron tools",
+  "A stack of torches",
+  "Potion supplies for tomorrow",
+];
+
+// Pick N items from an array without repeats
+function pickN(arr, n) {
+  const copy = [...arr];
+  const out = [];
+  while (n-- > 0 && copy.length) {
+    const i = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(i, 1)[0]);
   }
-
-  // Skip if quest already exists (prevents duplicates on manual runs)
-  if (fs.existsSync(outputPath)) {
-    console.log(`Quest already exists: ${outputPath}`);
-    return;
-  }
-
-  try {
-    console.log(`Generating quest for ${today}...`);
-
-    // Call Groq with structured output (Zod schema)
-    const { object } = await generateObject({
-      model: groq(MODEL),
-      schema: z.object({
-        title: z.string().min(5).max(60).describe('Short, mysterious, fun title'),
-        lore: z.string().min(30).max(180).describe('2-3 sentences of immersive backstory'),
-        steps: z.array(z.string().min(10).max(140))
-          .min(1).max(3)
-          .describe('1-3 clear, vanilla Minecraft steps. No mods, no redstone.'),
-        reward: z.string().min(10).max(100).describe('Creative, craftable/findable reward'),
-        biomeHint: z.string().min(5).max(50).describe('Suggested starting biome or dimension'),
-      }),
-      prompt: `
-You are a Minecraft lore master. Generate ONE epic, vanilla-friendly daily quest for ${today}.
-
-Rules:
-- 100% vanilla Minecraft (Java/Bedrock)
-- Works in any world seed
-- Focus: exploration, light survival, puzzles
-- No mods, no commands, no impossible tasks
-- Theme: mystery, artifact, echo, curse, whisper, forge
-
-Output structured JSON only. Example:
-{
-  "title": "The Whispering Acacia",
-  "lore": "In savanna winds, a lone tree hums with ancient songs...",
-  "steps": ["Find acacia at sunset", "Dig beneath for buried map"],
-  "reward": "Enchanted golden apple blueprint",
-  "biomeHint": "Savanna"
-}
-      `.trim(),
-      temperature: 0.8,
-      max_tokens: 300,
-    });
-
-    // Build final quest object
-    const quest = {
-      date: today,
-      id: today.replace(/-/g, ''), // e.g., 20251104
-      title: object.title.trim(),
-      lore: object.lore.trim(),
-      steps: object.steps.map(s => s.trim()),
-      reward: object.reward.trim(),
-      biomeHint: object.biomeHint.trim(),
-    };
-
-    // Save to file
-    fs.writeFileSync(outputPath, JSON.stringify(quest, null, 2));
-    console.log(`Quest saved: ${outputPath}`);
-    console.log(`Title: ${quest.title}`);
-
-  } catch (error) {
-    console.error('Failed to generate quest:', error.message);
-    process.exit(1); // Fail the Action if API error
-  }
+  return out;
 }
 
-// === RUN ===
-generateQuest().catch(err => {
-  console.error('Unhandled error:', err);
-  process.exit(1);
-});
+// 1–3 steps. Slightly more on Fri/Sat.
+function stepsForDate(d) {
+  const dow = new Date(d).getUTCDay(); // 0 Sun … 6 Sat
+  const base = dow === 5 || dow === 6 ? 3 : dow === 0 ? 1 : 2; // Fri/Sat=3, Sun=1, else=2
+  const advChance = dow === 5 || dow === 6 ? 0.7 : 0.35;
+  const steps = [];
+
+  // Always include one core step
+  steps.push(...pickN(actionsCore, 1));
+
+  // Maybe add an advanced step if chance hits
+  if (Math.random() < advChance) steps.push(...pickN(actionsAdv, 1));
+
+  // Maybe one more core step to reach base
+  if (steps.length < base) steps.push(...pickN(actionsCore, 1));
+
+  // Cap at 3 steps
+  return steps.slice(0, 3);
+}
+
+const quest = {
+  title: "Vanilla Daily Quest",
+  id: DATE,
+  date: DATE,
+  lore:
+    "A simple, seed-agnostic challenge you can finish in survival without commands or mods.",
+  biome_hint: biomeHints[Math.floor(Math.random() * biomeHints.length)],
+  reward: rewards[Math.floor(Math.random() * rewards.length)],
+  steps: stepsForDate(DATE),
+  rules: [
+    "Vanilla survival only. No commands, no mods, any seed.",
+    "All steps are optional—play safely and have fun.",
+    "If a structure-based step isn’t found in 10 minutes, you may skip it.",
+  ],
+};
+
+function ensureDir(p) {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+}
+
+ensureDir(OUT_DIR);
+fs.writeFileSync(OUT, JSON.stringify(quest, null, 2));
+console.log(`Wrote ${OUT}`);
