@@ -2,77 +2,89 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MC Daily Quests</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #111;
-      --stone: #1d1d1d;
-      --grass: #4CAF50;
-      --gold: #FFD700;
-      --accent: #8BC34A;
-      --lava: #FF5722;
+      --bg: #e0f7fa;
+      --text: #222;
+      --primary: #43a047;
+      --secondary: #66bb6a;
+      --accent: #ffee58;
+      --stone: #c8e6c9;
+      --lava: #ef5350;
+      --sky: #81d4fa;
     }
 
     * { box-sizing: border-box; }
     body {
-      background: var(--bg);
+      background: var(--sky);
       font-family: 'Press Start 2P', cursive;
-      color: #fff;
+      color: var(--text);
       padding: 1rem;
       margin: 0;
     }
 
     h1 {
       text-align: center;
-      color: var(--gold);
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+      font-size: 1.6rem;
+      margin-bottom: 1.5rem;
+      color: var(--lava);
+      text-shadow: 2px 2px white;
     }
 
     .section {
       background: var(--stone);
-      border: 4px solid var(--grass);
-      border-radius: 12px;
-      padding: 1rem;
+      border: 4px solid var(--primary);
+      border-radius: 14px;
+      padding: 1.5rem;
       margin-bottom: 2rem;
-      box-shadow: 0 4px 10px #000;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-size: 1rem;
     }
 
     input, button {
-      padding: 0.6rem;
+      padding: 0.8rem;
       font-family: inherit;
       font-size: 1rem;
       margin: 0.5rem 0;
+      width: 100%;
+      border: 2px solid var(--primary);
+      border-radius: 8px;
     }
 
-    input { width: calc(100% - 1rem); }
     button {
-      background: var(--grass);
+      background: var(--primary);
       color: white;
-      border: none;
       cursor: pointer;
-      width: 100%;
     }
 
     button:hover {
-      background: #43a047;
+      background: var(--secondary);
     }
 
-    .quest-block h2 { color: var(--gold); font-size: 1.2rem; }
+    .quest-block h2 {
+      font-size: 1.1rem;
+      color: var(--lava);
+    }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 1rem;
     }
 
     .archive-card {
-      background: #2a2a2a;
+      background: white;
+      border: 2px solid var(--secondary);
+      border-radius: 10px;
       padding: 1rem;
-      border: 2px solid var(--grass);
-      border-radius: 8px;
     }
 
     table {
@@ -82,7 +94,7 @@
     }
 
     th, td {
-      border: 1px solid #444;
+      border: 1px solid #999;
       padding: 0.5rem;
       text-align: left;
     }
@@ -97,12 +109,18 @@
 
     #myStats {
       display: none;
-      font-size: 0.9rem;
       margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .highlight {
+      background: var(--accent);
+      padding: 0.2rem 0.5rem;
+      border-radius: 5px;
     }
 
     @media(max-width: 600px) {
-      h1 { font-size: 1.2rem; }
+      h1 { font-size: 1.3rem; }
       input, button { font-size: 0.9rem; }
       table { font-size: 0.8rem; }
     }
@@ -110,7 +128,7 @@
 </head>
 <body>
 
-<h1>MC DAILY QUESTS</h1>
+<h1>🌍 MC DAILY QUESTS</h1>
 
 <div class="section">
   <div id="quest">Loading quest...</div>
@@ -118,14 +136,13 @@
 
 <div class="section">
   <h2>🎮 Submit Your Quest</h2>
-  <input type="text" id="player" placeholder="Your Minecraft username" />
-  <input type="text" id="seed" placeholder="Your world seed..." />
-  <button onclick="submitQuest()">Attach & Share</button>
+  <input type="text" id="player" placeholder="Minecraft Username" />
+  <input type="text" id="seed" placeholder="World Seed" />
+  <button onclick="submitQuest()">Submit Quest</button>
   <div id="submitStatus"></div>
 </div>
-
 <div class="section">
-  <h2>📜 Quest Archive</h2>
+  <h2>📚 Quest Archive</h2>
   <div class="grid" id="archive"><div>Loading...</div></div>
 </div>
 
@@ -140,7 +157,7 @@
   </table>
 
   <div id="myStats">
-    <p>📊 Your Stats:</p>
+    <p>📊 <strong>Your Stats</strong></p>
     <p><img id="statAvatar" class="avatar" src="" /> <strong id="statName"></strong></p>
     <p>⭐ Score: <span id="statScore"></span></p>
     <p>🏅 Rank: <span id="statRank"></span></p>
@@ -148,7 +165,7 @@
 </div>
 
 <div class="section">
-  <h2>📔 Your Adventure Log</h2>
+  <h2>📔 Adventure Log</h2>
   <div id="log">No quests submitted yet.</div>
 </div>
 
@@ -156,11 +173,25 @@
   const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9YCDjzo6GE-sRHgLwU9ZzWeLdC2ugK5t0mc7uJsg8b0nl-7ec59JOewFopLzlPlKurQ/exec';
   const today = new Date().toISOString().split('T')[0];
 
+  async function getQuestDates() {
+    try {
+      const res = await fetch('https://api.github.com/repos/NAGOHUSA/MCQUESTS/contents/quests');
+      const files = await res.json();
+      return files
+        .filter(f => f.name.endsWith('.json'))
+        .map(f => f.name.replace('.json', ''))
+        .sort((a, b) => b.localeCompare(a));
+    } catch (err) {
+      console.error('Could not fetch quest dates:', err);
+      return [];
+    }
+  }
+
   async function loadQuest(date, container = 'quest') {
     const url = `https://raw.githubusercontent.com/NAGOHUSA/MCQUESTS/main/quests/${date}.json`;
     try {
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Not found');
+      if (!res.ok) throw new Error('Quest not found');
       const q = await res.json();
       document.getElementById(container).innerHTML = `
         <div class="quest-block">
@@ -168,20 +199,19 @@
           <p><em>${q.lore}</em></p>
           <h3>Steps:</h3>
           <ol>${q.steps.map(s => `<li>${s}</li>`).join('')}</ol>
-          <h3>Reward:</h3><p>${q.reward}</p>
-          <p><strong>Start Biome:</strong> ${q.biomeHint}</p>
+          <h3>Reward:</h3>
+          <p>${q.reward}</p>
+          <p><strong>Biome:</strong> ${q.biomeHint}</p>
           <p><small>ID: ${q.id}</small></p>
-        </div>
-      `;
-    } catch {
-      document.getElementById(container).innerHTML = `<p class="empty">Today's quest not found.</p>`;
+        </div>`;
+    } catch (err) {
+      document.getElementById(container).innerHTML = `<p>⚠️ Quest not found for ${date}</p>`;
     }
   }
-
   async function submitQuest() {
     const player = document.getElementById('player').value.trim();
     const seed = document.getElementById('seed').value.trim();
-    if (!player) return alert('Enter your Minecraft username!');
+    if (!player) return alert('Please enter your Minecraft username!');
     const payload = {
       player,
       questID: today,
@@ -199,7 +229,7 @@
       saveLocalQuest(player, today, seed);
       loadLeaderboard(player);
     } catch (err) {
-      document.getElementById('submitStatus').textContent = '❌ Error submitting.';
+      document.getElementById('submitStatus').textContent = '❌ Submission error.';
     }
   }
 
@@ -235,7 +265,7 @@
             <td>${p.score}</td>
           </tr>`;
       });
-      document.getElementById('questHero').innerHTML = `🎉 Hero of the Day: <strong>${topPlayer}</strong>`;
+      document.getElementById('questHero').innerHTML = `🎉 <span class="highlight">Hero of the Day: ${topPlayer}</span>`;
       if (currentPlayer) {
         const me = data.find(p => p.player.toLowerCase() === currentPlayer.toLowerCase());
         if (me) {
@@ -248,26 +278,30 @@
         }
       }
     } catch (err) {
-      document.querySelector('#leaderboardTable tbody').innerHTML = '<tr><td colspan="3">Error loading leaderboard</td></tr>';
+      document.querySelector('#leaderboardTable tbody').innerHTML = '<tr><td colspan="3">⚠️ Error loading leaderboard</td></tr>';
     }
   }
 
   async function loadArchive() {
-    const dates = ['2025-11-01', '2025-11-02', '2025-11-03', '2025-11-04'];
+    const dates = await getQuestDates();
     const archive = document.getElementById('archive');
     archive.innerHTML = '';
-    for (let i = 0; i < dates.length; i++) {
+    const latest = dates.slice(0, 6);
+    for (let i = 0; i < latest.length; i++) {
       const card = document.createElement('div');
       card.className = 'archive-card';
       card.id = `a${i}`;
       archive.appendChild(card);
-      loadQuest(dates[i], `a${i}`);
+      loadQuest(latest[i], `a${i}`);
     }
   }
 
   // INIT
   (async () => {
-    loadQuest(today, 'quest');
+    const dates = await getQuestDates();
+    const todayAvailable = dates.includes(today);
+    const questToLoad = todayAvailable ? today : dates[0];
+    loadQuest(questToLoad, 'quest');
     loadArchive();
     updateLog();
     const savedPlayer = localStorage.getItem('mcqPlayer');
