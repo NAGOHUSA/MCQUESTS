@@ -1,33 +1,54 @@
-name: Generate Daily Quest
+# .github/workflows/daily-quest.yml
+name: Daily Quest
 
 on:
+  # 09:00 UTC daily
   schedule:
-    - cron: '0 0 * * *'  # Midnight UTC
-  workflow_dispatch:
+    - cron: "0 9 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-quest
+  cancel-in-progress: true
 
 jobs:
-  generate:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      # Uses root-level package-lock.json for caching
+      - name: Use Node.js 20 with npm cache
+        uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - run: npm ci
+      - name: Install dependencies (CI)
+        run: npm ci
 
-      - name: Generate
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_MCDAILYQUESTS }}
-        run: node generate-quest.js
+      - name: Build (if present)
+        run: npm run build --if-present
 
-      - run: |
-          git config user.name "Nagoh Quest Bot"
-          git config user.email "bot@nagoh.us"
-          git add quests/
-          git diff --staged --quiet || git commit -m "🌟 Daily Quest: $(date +%F)"
-          git push
+      # Run your script/task here (adjust to your repo needs)
+      # e.g., generate quests, update JSON, etc.
+      - name: Run Daily Quest task
+        run: npm run daily --if-present
+
+      # Commit any generated artifacts (optional; remove if not needed)
+      - name: Commit changes (if any)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "chore(daily-quest): automated update [skip ci]"
+            git push
+          else
+            echo "No changes to commit."
+          fi
