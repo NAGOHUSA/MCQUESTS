@@ -44,31 +44,62 @@ jobs:
           TODAY="$(date +%F)"
           OUT="quests/${TODAY}.json"
           FORCE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' }}"
-
           echo "today=$TODAY" >> "$GITHUB_OUTPUT"
           echo "out=$OUT" >> "$GITHUB_OUTPUT"
-          if [[ "$FORCE" == "true" ]]; then
-            echo "force=1" >> "$GITHUB_OUTPUT"
-          else
-            echo "force=" >> "$GITHUB_OUTPUT"
-          fi
-
+          if [[ "$FORCE" == "true" ]]; then echo "force=1" >> "$GITHUB_OUTPUT"; else echo "force=" >> "$GITHUB_OUTPUT"; fi
           echo "Resolved TODAY=$TODAY OUT=$OUT FORCE=${FORCE:-0}"
 
-      - name: Set up Node.js ${{ env.NODE_VERSION }} (with npm cache)
+      - name: Detect package manager & lockfile
+        id: pm
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f package-lock.json ]]; then
+            echo "pm=npm" >> "$GITHUB_OUTPUT"
+            echo "lock=package-lock.json" >> "$GITHUB_OUTPUT"
+          elif [[ -f yarn.lock ]]; then
+            echo "pm=yarn" >> "$GITHUB_OUTPUT"
+            echo "lock=yarn.lock" >> "$GITHUB_OUTPUT"
+          elif [[ -f pnpm-lock.yaml ]]; then
+            echo "pm=pnpm" >> "$GITHUB_OUTPUT"
+            echo "lock=pnpm-lock.yaml" >> "$GITHUB_OUTPUT"
+          else
+            echo "pm=npm" >> "$GITHUB_OUTPUT"
+            echo "lock=" >> "$GITHUB_OUTPUT"
+            echo "No lockfile found at repo root; proceeding without cache."
+          fi
+
+      # Only enable caching if a lockfile was found
+      - name: Set up Node.js (with cache when lockfile exists)
+        if: steps.pm.outputs.lock != ''
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-          cache-dependency-path: package-lock.json
+          cache: ${{ steps.pm.outputs.pm }}
+          cache-dependency-path: ${{ steps.pm.outputs.lock }}
+
+      - name: Set up Node.js (no cache)
+        if: steps.pm.outputs.lock == ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
+        shell: bash
         run: |
-          if [[ -f package-lock.json ]]; then
-            npm ci
-          else
-            npm i
-          fi
+          set -euo pipefail
+          case "${{ steps.pm.outputs.pm }}" in
+            npm)
+              if [[ -f package-lock.json ]]; then npm ci; else npm i; fi
+              ;;
+            yarn)
+              yarn install --frozen-lockfile || yarn install
+              ;;
+            pnpm)
+              corepack enable
+              pnpm install --frozen-lockfile || pnpm install
+              ;;
+          esac
 
       - name: Generate today’s quest
         id: gen
@@ -78,7 +109,6 @@ jobs:
           OUT="${{ steps.vars.outputs.out }}"
           TODAY="${{ steps.vars.outputs.today }}"
           FORCE="${{ steps.vars.outputs.force }}"
-
           mkdir -p quests
 
           # Skip on scheduled run if today's file already exists and not forcing
@@ -94,7 +124,6 @@ jobs:
           if npm run | grep -qE '^\s*daily'; then
             DATE="$TODAY" OUT="$OUT" npm run -s daily
           elif [[ -f generate-quest.js ]]; then
-            # Fallback direct call if you keep a generator in repo root
             node generate-quest.js --date "$TODAY" --out "$OUT" || node generate-quest.js > "$OUT"
           else
             echo "No generator found. Add an npm script 'daily' or a generate-quest.js."
@@ -106,17 +135,15 @@ jobs:
             echo "ERROR: $OUT was not produced or is empty."
             exit 1
           fi
-
           echo "skipped=" >> "$GITHUB_OUTPUT"
 
       - name: Validate quest JSON (jq)
         if: steps.gen.outputs.skipped != '1'
         run: |
           jq -e type "${{ steps.vars.outputs.out }}" > /dev/null
-          # Minimal schema sanity: must have title/name and 1–3 steps/objectives/tasks
           jq -e '((.title // .name // .questTitle) and ((.steps // .objectives // .tasks) | length >= 1 and length <= 3))' "${{ steps.vars.outputs.out }}" > /dev/null
 
-      - name: Validate quest (vanilla sanity via validate-quest.js)
+      - name: Extended validation (if present)
         if: steps.gen.outputs.skipped != '1'
         run: |
           if [[ -f validate-quest.js ]]; then
