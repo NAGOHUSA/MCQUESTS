@@ -1,283 +1,384 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Minecraft Daily Quest</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="description" content="New vanilla Minecraft quest every day. No mods. Play in any world or seed. Vote once per day and climb the leaderboard." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #d0f4ff;
-      --text: #1a1a1a;
-      --primary: #4caf50;
-      --secondary: #66bb6a;
-      --accent: #ffd700;
-      --panel: #f1f8e9;
+    :root{
+      --bg:#0b1020; --panel:#111936; --accent:#31e081; --accent-2:#ffd24d; --text:#eef3ff; --muted:#9db0ff; --danger:#ff6b6b;
+      --border:rgba(255,255,255,0.08);
     }
-    * { box-sizing: border-box; }
-    body {
-      font-family: 'Rubik', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 1rem;
-      margin: 0;
-    }
-    h1 {
-      text-align: center;
-      font-size: 2rem;
-      color: var(--primary);
-      margin-bottom: 1.5rem;
-      text-shadow: 1px 1px white;
-    }
-    .section {
-      background: var(--panel);
-      border: 4px solid var(--primary);
-      border-radius: 14px;
-      padding: 1.2rem;
-      margin-bottom: 2rem;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    h2 { color: var(--primary); margin-bottom: 1rem; font-size: 1.25rem; }
-    input, button {
-      width: 100%;
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 0.75rem;
-      margin-bottom: 0.5rem;
-      border: 2px solid var(--primary);
-      border-radius: 8px;
-    }
-    button {
-      background: var(--primary);
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: var(--secondary);
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 1rem;
-    }
-    .archive-card {
-      background: white;
-      border: 2px solid var(--secondary);
-      border-radius: 10px;
-      padding: 1rem;
-      font-size: 0.95rem;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 1rem;
-    }
-    th, td {
-      border: 1px solid #aaa;
-      padding: 0.5rem;
-      text-align: left;
-    }
-    .avatar {
-      width: 24px;
-      height: 24px;
-      border-radius: 4px;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-    #myStats {
-      display: none;
-      margin-top: 1rem;
-      font-size: 0.95rem;
-    }
-    .highlight {
-      background: var(--accent);
-      padding: 0.2rem 0.4rem;
-      border-radius: 5px;
-    }
-    @media(max-width: 600px) {
-      h1 { font-size: 1.5rem; }
-      table { font-size: 0.85rem; }
-    }
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#0b1020 0%,#0d1230 100%);color:var(--text);font-family:Montserrat,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:var(--accent)}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#3cf19c 0%,#1cb0ff 100%);box-shadow:0 8px 30px rgba(49,224,129,.25)}
+    h1{font-size:clamp(22px,4vw,32px);margin:0;font-weight:800;letter-spacing:0.3px}
+    .tag{background:rgba(49,224,129,.12);border:1px solid rgba(49,224,129,.35);color:#9ff6c8;padding:4px 10px;border-radius:999px;font-size:12px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px}
+    @media (min-width:980px){.grid{grid-template-columns:1.4fr .6fr}}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px 18px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+    .card h2{margin:0 0 10px 0;font-size:20px}
+    .muted{color:var(--muted)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{border:1px solid var(--border);border-radius:999px;padding:6px 10px;background:rgba(255,255,255,0.03)}
+    .btn{appearance:none;border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));color:var(--text);padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .btn-accent{border-color:rgba(49,224,129,.55);background:linear-gradient(180deg,rgba(49,224,129,.18),rgba(49,224,129,.10))}
+    .btn-danger{border-color:rgba(255,107,107,.5);background:linear-gradient(180deg,rgba(255,107,107,.18),rgba(255,107,107,.10))}
+    .stars{display:flex;gap:8px;align-items:center}
+    .star{font-size:28px;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+    .star.off{opacity:.35}
+    .hr{height:1px;border:0;background:var(--border);margin:14px 0}
+    .list{display:flex;flex-direction:column;gap:10px;max-height:350px;overflow:auto}
+    .list a{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-decoration:none;background:rgba(255,255,255,.02)}
+    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;background:#0c132b;border:1px solid var(--border);border-radius:6px;padding:2px 6px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
+    tbody tr:hover{background:rgba(255,255,255,.03)}
+    .hint{font-size:12px;opacity:.8}
+    .success{color:#9ff6c8}
+    .warn{color:var(--danger)}
+    footer{opacity:.7;margin-top:18px;font-size:12px}
   </style>
 </head>
 <body>
-  <h1>🧱 Minecraft Daily Quest</h1>
+  <div class="wrap">
+    <header>
+      <div class="logo"></div>
+      <div>
+        <h1>Minecraft Daily Quest</h1>
+        <div class="row"><span class="tag">Vanilla • No mods • Any seed</span></div>
+      </div>
+    </header>
 
-  <div class="section">
-    <div id="quest">Loading quest...</div>
-  </div>
+    <div class="grid">
+      <!-- LEFT: Today + Archive -->
+      <div class="card">
+        <h2>Today’s Quest <span id="questDate" class="muted"></span></h2>
+        <div id="questLoading" class="muted">Loading today’s quest…</div>
+        <div id="questBox" style="display:none">
+          <div class="row" style="justify-content:space-between">
+            <div class="row">
+              <span class="pill" id="questBiome">Biome: —</span>
+              <span class="pill" id="questReward">Reward: —</span>
+            </div>
+            <span class="pill">ID: <span id="questId" class="kbd"></span></span>
+          </div>
 
-  <div class="section">
-    <h2>🎮 Submit Your Quest</h2>
-    <input type="text" id="player" placeholder="Minecraft Username" />
-    <input type="text" id="seed" placeholder="World Seed" />
-    <button onclick="submitQuest()">Submit Quest</button>
-    <div id="submitStatus"></div>
-  </div>
+          <h3 id="questTitle" style="margin:12px 0 8px 0"></h3>
+          <div id="questLore" class="muted" style="white-space:pre-wrap"></div>
 
-  <div class="section">
-    <h2>📚 Quest Archive</h2>
-    <div class="grid" id="archive"><div>Loading...</div></div>
-  </div>
+          <div class="hr"></div>
+          <div>
+            <strong>Steps (1–3):</strong>
+            <ol id="questSteps" style="margin-top:8px"></ol>
+          </div>
 
-  <div class="section">
-    <h2>🏆 Leaderboard</h2>
-    <div id="questHero">Loading top player...</div>
-    <table id="leaderboardTable">
-      <thead>
-        <tr><th>#</th><th>Player</th><th>Score</th></tr>
-      </thead>
-      <tbody><tr><td colspan="3">Loading...</td></tr></tbody>
-    </table>
+          <div class="hr"></div>
 
-    <div id="myStats">
-      <p><strong>Your Stats</strong></p>
-      <p><img id="statAvatar" class="avatar" src="" /> <strong id="statName"></strong></p>
-      <p>⭐ Score: <span id="statScore"></span></p>
-      <p>🏅 Rank: <span id="statRank"></span></p>
+          <div class="row" style="justify-content:space-between;align-items:center">
+            <div>
+              <div class="muted hint">Rate today’s quest (once per day):</div>
+              <div class="stars" id="starRow" aria-label="Rate 1 to 5">
+                <span class="star off" data-star="1">★</span>
+                <span class="star off" data-star="2">★</span>
+                <span class="star off" data-star="3">★</span>
+                <span class="star off" data-star="4">★</span>
+                <span class="star off" data-star="5">★</span>
+              </div>
+              <div id="voteMsg" class="hint" style="margin-top:6px"></div>
+            </div>
+            <button id="voteBtn" class="btn btn-accent">Submit Vote</button>
+          </div>
+
+          <div class="hr"></div>
+          <div class="muted hint" id="statsLine">Ratings: —</div>
+        </div>
+
+        <div class="hr"></div>
+        <h2>Archive</h2>
+        <div class="hint muted">Browse previous quests and tap to preview.</div>
+        <div id="archiveList" class="list" style="margin-top:8px">
+          <div class="muted">Loading archive…</div>
+        </div>
+      </div>
+
+      <!-- RIGHT: How it works + Leaderboard -->
+      <div class="card">
+        <h2>How it works</h2>
+        <ul style="margin:8px 0 10px 18px;line-height:1.5">
+          <li>A new <strong>vanilla</strong> quest drops every day. No commands, no mods—<em>works in any world/seed</em>.</li>
+          <li>Complete it solo or with friends, then <strong>rate it</strong> once per day.</li>
+          <li>Votes update the <strong>Leaderboard</strong> (top players & communities).</li>
+          <li>See older quests in the <strong>Archive</strong>.</li>
+        </ul>
+        <div class="hr"></div>
+        <h2>Leaderboard</h2>
+        <div class="hint muted">Updates live from Google Sheets.</div>
+        <div id="lbWrap" style="margin-top:8px">
+          <div class="muted">Loading leaderboard…</div>
+        </div>
+      </div>
     </div>
+
+    <footer>
+      Data: <span class="kbd">/quests/*.json</span> from GitHub • Votes via Apps Script • Sheet-backed leaderboard.
+    </footer>
   </div>
 
-  <div class="section">
-    <h2>📔 Adventure Log</h2>
-    <div id="log">No quests submitted yet.</div>
-  </div>
+<script>
+/** =======================
+ *  CONFIG — EDIT THESE
+ *  ======================= */
+const RAW_BASE = "https://raw.githubusercontent.com/NAGOHUSA/MCQUESTS/main/quests";
+const CONTENTS_API = "https://api.github.com/repos/NAGOHUSA/MCQUESTS/contents/quests";
+// After you deploy your Apps Script as a Web app, paste the URL below (ends with /exec)
+const APPS_SCRIPT_URL = "PASTE_YOUR_DEPLOYED_WEB_APP_URL_HERE"; // e.g., https://script.google.com/macros/s/AKfycby.../exec
+// Optional: sheet name for leaderboard (used by Apps Script)
+const LEADERBOARD_SHEET = "Leaderboard";
 
-  <script>
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx9YCDjzo6GE-sRHgLwU9ZzWeLdC2ugK5t0mc7uJsg8b0nl-7ec59JOewFopLzlPlKurQ/exec';
-    const today = new Date().toISOString().split('T')[0];
+/** ===== Utilities ===== */
+const $ = (sel)=>document.querySelector(sel);
+const todayStr = (d=new Date())=>{
+  // Use user's local date for "today"
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+};
+const fmt = (n)=>n.toLocaleString();
 
-    async function getQuestDates() {
-      try {
-        const res = await fetch('https://api.github.com/repos/NAGOHUSA/MCQUESTS/contents/quests');
-        const files = await res.json();
-        return files.filter(f => f.name.endsWith('.json')).map(f => f.name.replace('.json', '')).sort((a, b) => b.localeCompare(a));
-      } catch (err) {
-        console.error('Could not fetch quest dates:', err);
-        return [];
-      }
+function toast(el,msg,cls=""){ el.textContent = msg; el.className = `hint ${cls}`; }
+
+/** ===== State ===== */
+let currentQuest = null;
+let selectedStars = 0;
+let userId = localStorage.getItem("mcq_userid");
+if(!userId){
+  userId = "u_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  localStorage.setItem("mcq_userid", userId);
+}
+
+/** ===== Fetch a quest JSON by date ===== */
+async function getQuest(date){
+  const url = `${RAW_BASE}/${date}.json`;
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error(`Quest ${date} not found (${res.status})`);
+  return res.json();
+}
+
+/** ===== Load today's quest, fallback to latest in archive ===== */
+async function loadToday(){
+  const date = todayStr();
+  $("#questDate").textContent = date;
+  try{
+    currentQuest = await getQuest(date);
+    renderQuest(currentQuest, date);
+  }catch(e){
+    // fallback to latest available file from /contents
+    const items = await (await fetch(CONTENTS_API, {cache:"no-store"})).json();
+    const files = (Array.isArray(items)?items:[]).filter(x=>x.type==="file" && x.name.endsWith(".json"));
+    if(!files.length) throw e;
+    files.sort((a,b)=> b.name.localeCompare(a.name)); // YYYY-MM-DD.json -> lexicographic sort works
+    const latest = files[0].name.replace(".json","");
+    $("#questDate").textContent = `${date} (showing latest available: ${latest})`;
+    currentQuest = await getQuest(latest);
+    renderQuest(currentQuest, latest);
+  }
+}
+
+/** ===== Render quest ===== */
+function renderQuest(q, dateKey){
+  $("#questLoading").style.display="none";
+  $("#questBox").style.display="block";
+
+  // Flexible field mapping (handles different camel/kebab cases)
+  const title = q.title || q.name || q.questTitle || "Untitled Quest";
+  const lore  = q.lore || q.description || q.flavor || "";
+  const steps = q.steps || q.objectives || q.tasks || [];
+  const biome = q.biome_hint || q.biome || "Any";
+  const reward = q.reward || q.points || "Bragging rights";
+  const id = q.id || dateKey;
+
+  $("#questTitle").textContent = title;
+  $("#questLore").textContent = lore;
+  $("#questBiome").textContent = "Biome: " + biome;
+  $("#questReward").textContent = "Reward: " + reward;
+  $("#questId").textContent = id;
+
+  const list = $("#questSteps");
+  list.innerHTML = "";
+  (steps || []).slice(0,3).forEach(s=>{
+    const li = document.createElement("li");
+    li.textContent = s;
+    list.appendChild(li);
+  });
+
+  // load stats for this quest
+  loadStats(dateKey);
+
+  // voting guard
+  const votedKey = `voted-${dateKey}`;
+  if(localStorage.getItem(votedKey)){
+    $("#voteBtn").disabled = true;
+    toast($("#voteMsg"), "You already voted today. Come back tomorrow!", "success");
+  }else{
+    toast($("#voteMsg"), "Tap a star, then Submit Vote.");
+  }
+}
+
+/** ===== Stars UI ===== */
+function wireStars(){
+  const stars = [...document.querySelectorAll(".star")];
+  stars.forEach(st=>{
+    st.addEventListener("click", ()=>{
+      selectedStars = Number(st.dataset.star);
+      stars.forEach((el,i)=> el.classList.toggle("off", (i+1)>selectedStars));
+    });
+  });
+}
+
+/** ===== Submit vote (once/day) ===== */
+async function submitVote(){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_")){
+    toast($("#voteMsg"), "Voting not configured yet. Add your Apps Script Web App URL in the config.", "warn");
+    return;
+  }
+  if(!currentQuest){ return; }
+  if(!selectedStars){ toast($("#voteMsg"), "Choose a rating first (1–5 stars).", "warn"); return;}
+
+  const dateKey = $("#questId").textContent || todayStr();
+  const votedKey = `voted-${dateKey}`;
+  if(localStorage.getItem(votedKey)){
+    toast($("#voteMsg"), "You already voted today. Thanks!", "success"); return;
+  }
+
+  $("#voteBtn").disabled = true;
+  toast($("#voteMsg"), "Submitting your vote…");
+
+  const payload = {
+    action: "vote",
+    date: dateKey,
+    rating: selectedStars,
+    userId
+  };
+
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload),
+    });
+    if(!res.ok) throw new Error("Vote error " + res.status);
+    const data = await res.json();
+
+    localStorage.setItem(votedKey, String(selectedStars));
+    toast($("#voteMsg"), "Vote saved. Thank you!", "success");
+    if(data && data.stats){
+      $("#statsLine").textContent = `Ratings: ${fmt(data.stats.count)} • Avg ${Number(data.stats.avg).toFixed(2)} ★`;
     }
+  }catch(err){
+    console.error(err);
+    $("#voteBtn").disabled = false;
+    toast($("#voteMsg"), "Could not submit vote. Try again in a bit.", "warn");
+  }
+}
 
-    async function loadQuest(date, container = 'quest') {
-      const url = `https://raw.githubusercontent.com/NAGOHUSA/MCQUESTS/main/quests/${date}.json`;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Quest not found');
-        const q = await res.json();
-        document.getElementById(container).innerHTML = `
-          <div class="quest-block">
-            <h2>${q.title}</h2>
-            <p><em>${q.lore}</em></p>
-            <h3>Steps:</h3>
-            <ol>${q.steps.map(s => `<li>${s}</li>`).join('')}</ol>
-            <h3>Reward:</h3>
-            <p>${q.reward}</p>
-            <p><strong>Biome:</strong> ${q.biomeHint}</p>
-            <p><small>ID: ${q.id}</small></p>
-          </div>`;
-      } catch (err) {
-        document.getElementById(container).innerHTML = `<p>⚠️ Quest not found for ${date}</p>`;
-      }
+/** ===== Load archive list from GitHub contents ===== */
+async function loadArchive(){
+  const res = await fetch(CONTENTS_API, {cache:"no-store"});
+  const items = await res.json();
+  const files = (Array.isArray(items)?items:[]).filter(x=>x.type==="file" && x.name.endsWith(".json"));
+  files.sort((a,b)=> b.name.localeCompare(a.name));
+  const container = $("#archiveList");
+  container.innerHTML = "";
+  if(!files.length){ container.innerHTML = `<div class="muted">No quests found yet.</div>`; return; }
+
+  files.forEach(f=>{
+    const date = f.name.replace(".json","");
+    const el = document.createElement("a");
+    el.href="#";
+    el.innerHTML = `<span>${date}</span><span class="muted">open</span>`;
+    el.addEventListener("click", async (e)=>{
+      e.preventDefault();
+      try{
+        const q = await getQuest(date);
+        $("#questDate").textContent = `${date}`;
+        currentQuest = q;
+        renderQuest(q, date);
+        window.scrollTo({top:0,behavior:"smooth"});
+      }catch(err){ alert("Could not load that quest."); }
+    });
+    container.appendChild(el);
+  });
+}
+
+/** ===== Stats for a given date (ratings) ===== */
+async function loadStats(dateKey){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_")){
+    $("#statsLine").textContent = `Ratings: setup Apps Script to see live stats.`;
+    return;
+  }
+  try{
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set("action","stats");
+    url.searchParams.set("date", dateKey);
+    const res = await fetch(url.toString(), {cache:"no-store"});
+    if(!res.ok) throw new Error("stats " + res.status);
+    const j = await res.json();
+    if(j && j.stats){
+      $("#statsLine").textContent = `Ratings: ${fmt(j.stats.count)} • Avg ${Number(j.stats.avg).toFixed(2)} ★`;
     }
+  }catch(err){
+    $("#statsLine").textContent = `Ratings: —`;
+  }
+}
 
-    async function submitQuest() {
-      const player = document.getElementById('player').value.trim();
-      const seed = document.getElementById('seed').value.trim();
-      if (!player) return alert('Please enter your Minecraft username!');
-      const payload = { player, questID: today, seed, score: 1 };
-      document.getElementById('submitStatus').textContent = 'Submitting...';
-      try {
-        const res = await fetch(GOOGLE_SCRIPT_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        const txt = await res.text();
-        document.getElementById('submitStatus').textContent = txt.includes('Success') ? '✅ Submitted!' : `⚠️ ${txt}`;
-        saveLocalQuest(player, today, seed);
-        loadLeaderboard(player);
-      } catch {
-        document.getElementById('submitStatus').textContent = '❌ Submission error.';
-      }
-    }
+/** ===== Leaderboard ===== */
+async function loadLeaderboard(){
+  const wrap = $("#lbWrap");
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("PASTE_")){
+    wrap.innerHTML = `<div class="muted">Connect your Apps Script URL to show the live leaderboard.</div>`;
+    return;
+  }
+  try{
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.set("action","leaderboard");
+    const res = await fetch(url.toString(), {cache:"no-store"});
+    if(!res.ok) throw new Error("lb " + res.status);
+    const j = await res.json();
+    const rows = (j && j.rows) ? j.rows : [];
+    if(!rows.length){ wrap.innerHTML = `<div class="muted">No leaderboard entries yet.</div>`; return; }
+    const table = document.createElement("table");
+    table.innerHTML = `
+      <thead><tr><th>#</th><th>Player</th><th>Score</th></tr></thead>
+      <tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${(r.player||"—")}</td><td>${fmt(Number(r.score||0))}</td></tr>`).join("")}</tbody>
+    `;
+    wrap.innerHTML = "";
+    wrap.appendChild(table);
+  }catch(err){
+    wrap.innerHTML = `<div class="warn">⚠️ Error loading leaderboard</div><div class="hint">Make sure the Apps Script Web App returns JSON for <span class="kbd">action=leaderboard</span>.</div>`;
+  }
+}
 
-    function saveLocalQuest(player, quest, seed) {
-      localStorage.setItem('mcqPlayer', player);
-      const log = JSON.parse(localStorage.getItem('nagohQuests') || '[]');
-      log.push({ player, quest, seed, date: new Date().toLocaleDateString() });
-      localStorage.setItem('nagohQuests', JSON.stringify(log));
-      updateLog();
-    }
-
-    function updateLog() {
-      const log = JSON.parse(localStorage.getItem('nagohQuests') || '[]');
-      const div = document.getElementById('log');
-      div.innerHTML = log.length === 0
-        ? 'No quests submitted yet.'
-        : log.map(l => `• ${l.date} – <strong>${l.player}</strong> – Quest ${l.quest}`).join('<br>');
-    }
-
-    async function loadLeaderboard(currentPlayer = '') {
-      try {
-        const res = await fetch(GOOGLE_SCRIPT_URL);
-        const data = await res.json();
-        const tbody = document.querySelector('#leaderboardTable tbody');
-        tbody.innerHTML = '';
-        let topPlayer = data[0]?.player || '';
-        data.forEach((p, i) => {
-          const avatar = `<img class="avatar" src="https://minotar.net/avatar/${p.player}/32" alt="${p.player}" />`;
-          tbody.innerHTML += `
-            <tr>
-              <td>${i + 1}</td>
-              <td>${avatar}${p.player}</td>
-              <td>${p.score}</td>
-            </tr>`;
-        });
-        document.getElementById('questHero').innerHTML = `🎉 <span class="highlight">Hero of the Day: ${topPlayer}</span>`;
-        if (currentPlayer) {
-          const me = data.find(p => p.player.toLowerCase() === currentPlayer.toLowerCase());
-          if (me) {
-            const rank = data.findIndex(p => p.player.toLowerCase() === currentPlayer.toLowerCase()) + 1;
-            document.getElementById('statName').textContent = me.player;
-            document.getElementById('statScore').textContent = me.score;
-            document.getElementById('statRank').textContent = rank;
-            document.getElementById('statAvatar').src = `https://minotar.net/avatar/${me.player}/32`;
-            document.getElementById('myStats').style.display = 'block';
-          }
-        }
-      } catch (err) {
-        document.querySelector('#leaderboardTable tbody').innerHTML = '<tr><td colspan="3">⚠️ Error loading leaderboard</td></tr>';
-      }
-    }
-
-    async function loadArchive() {
-      const dates = await getQuestDates();
-      const archive = document.getElementById('archive');
-      archive.innerHTML = '';
-      const latest = dates.slice(0, 6);
-      for (let i = 0; i < latest.length; i++) {
-        const card = document.createElement('div');
-        card.className = 'archive-card';
-        card.id = `a${i}`;
-        archive.appendChild(card);
-        loadQuest(latest[i], `a${i}`);
-      }
-    }
-
-    (async () => {
-      const dates = await getQuestDates();
-      const todayAvailable = dates.includes(today);
-      const questToLoad = todayAvailable ? today : dates[0];
-      loadQuest(questToLoad, 'quest');
-      loadArchive();
-      updateLog();
-      const savedPlayer = localStorage.getItem('mcqPlayer');
-      if (savedPlayer) {
-        document.getElementById('player').value = savedPlayer;
-        loadLeaderboard(savedPlayer);
-      } else {
-        loadLeaderboard();
-      }
-    })();
-  </script>
+/** ===== Init ===== */
+document.addEventListener("DOMContentLoaded", async ()=>{
+  wireStars();
+  $("#voteBtn").addEventListener("click", submitVote);
+  try{
+    await loadToday();
+  }catch(err){
+    $("#questLoading").textContent = "No quest found yet for today.";
+  }
+  loadArchive();
+  loadLeaderboard();
+});
+</script>
 </body>
 </html>
