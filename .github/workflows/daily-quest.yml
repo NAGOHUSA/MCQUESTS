@@ -1,15 +1,10 @@
-name: Generate Minecraft Daily Quest
+# .github/workflows/build.yml
+name: Build MC Daily Quests
 
 on:
-  schedule:
-    - cron: "0 9 * * *"   # 09:00 UTC daily (4–5 AM ET depending on DST)
   workflow_dispatch:
-    inputs:
-      force:
-        description: "Overwrite today's quest if it already exists?"
-        required: false
-        type: boolean
-        default: true
+  push:
+    branches: [ main ]
 
 permissions:
   contents: write
@@ -19,57 +14,62 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TZ: America/New_York
-      # Map your secret to GROQ_API_KEY so groq-sdk picks it up easily
-      GROQ_API_KEY: ${{ secrets.GROQ_MCDAILYQUESTS }}
-      # Also pass raw in case you prefer reading this name in code:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       GROQ_MCDAILYQUESTS: ${{ secrets.GROQ_MCDAILYQUESTS }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      # If a lockfile exists, set up Node with npm caching
+      - name: Setup Node (with npm cache)
+        if: ${{ hashFiles('package-lock.json', 'npm-shrinkwrap.json') != '' }}
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "npm"
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            npm-shrinkwrap.json
 
-      - name: Install deps
+      # If no lockfile exists, set up Node without caching
+      - name: Setup Node (no cache)
+        if: ${{ hashFiles('package-lock.json', 'npm-shrinkwrap.json') == '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Print environment details
         run: |
-          set -euo pipefail
-          if [[ -f package-lock.json ]]; then npm ci; else npm i; fi
+          node -v
+          npm -v
+          echo "Lockfile present? $([[ -f package-lock.json || -f npm-shrinkwrap.json ]] && echo yes || echo no)"
 
-      - name: Generate today's quest (UTC)
+      - name: Install dependencies
         run: |
-          set -euo pipefail
-          DATE="$(date -u +%F)"
-          echo "Target date: $DATE"
-
-          # Force overwrite on manual runs (or when input says true)
-          FORCE="${{ github.event_name == 'workflow_dispatch' && (inputs.force == true) }}"
-          if [[ "$FORCE" == "true" ]]; then
-            export FORCE="1"
+          if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ]; then
+            npm ci
           else
-            export FORCE="${FORCE:-0}"
+            npm install --no-audit --no-fund
           fi
 
-          # Allow manual override of date if you want someday:
-          # TARGET_DATE=2025-11-05 node generate-quest.js
-          node generate-quest.js
-          test -f "quests/${DATE}.json" || { echo "Missing quests/${DATE}.json"; ls -la quests || true; exit 1; }
-
-      - name: Validate output
+      - name: Build (if script exists)
         run: |
-          set -euo pipefail
-          DATE="$(date -u +%F)"
-          node validate-quest.js "quests/${DATE}.json"
+          if npm run | grep -qE 'build'; then
+            npm run build
+          else
+            echo "No build script defined; skipping."
+          fi
 
-      - name: Commit & push
+      - name: Commit build artifacts (optional)
+        if: ${{ success() && (github.event_name == 'workflow_dispatch') }}
         run: |
-          set -euo pipefail
-          DATE="$(date -u +%F)"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "quests/${DATE}.json"
-          git commit -m "chore(quests): add ${DATE}.json" || echo "Nothing to commit"
-          git push
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore(ci): update build artifacts [skip ci]"
+            git push
+          else
+            echo "No changes to commit."
+          fi
