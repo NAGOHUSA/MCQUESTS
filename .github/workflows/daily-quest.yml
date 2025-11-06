@@ -1,168 +1,75 @@
-name: Daily Quest
+name: Generate Minecraft Daily Quest
 
 on:
-  # 09:00 UTC daily (4–5 AM Eastern depending on DST)
   schedule:
-    - cron: "0 9 * * *"
+    - cron: "0 9 * * *"   # 09:00 UTC daily (4–5 AM ET depending on DST)
   workflow_dispatch:
     inputs:
       force:
         description: "Overwrite today's quest if it already exists?"
+        required: false
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: write
 
-concurrency:
-  group: daily-quest
-  cancel-in-progress: true
-
-env:
-  TZ: America/New_York
-  NODE_VERSION: "20"
-
 jobs:
-  generate:
+  build:
     runs-on: ubuntu-latest
+    env:
+      TZ: America/New_York
+      # Map your secret to GROQ_API_KEY so groq-sdk picks it up easily
+      GROQ_API_KEY: ${{ secrets.GROQ_MCDAILYQUESTS }}
+      # Also pass raw in case you prefer reading this name in code:
+      GROQ_MCDAILYQUESTS: ${{ secrets.GROQ_MCDAILYQUESTS }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Configure git user
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
         run: |
+          set -euo pipefail
+          if [[ -f package-lock.json ]]; then npm ci; else npm i; fi
+
+      - name: Generate today's quest (UTC)
+        run: |
+          set -euo pipefail
+          DATE="$(date -u +%F)"
+          echo "Target date: $DATE"
+
+          # Force overwrite on manual runs (or when input says true)
+          FORCE="${{ github.event_name == 'workflow_dispatch' && (inputs.force == true) }}"
+          if [[ "$FORCE" == "true" ]]; then
+            export FORCE="1"
+          else
+            export FORCE="${FORCE:-0}"
+          fi
+
+          # Allow manual override of date if you want someday:
+          # TARGET_DATE=2025-11-05 node generate-quest.js
+          node generate-quest.js
+          test -f "quests/${DATE}.json" || { echo "Missing quests/${DATE}.json"; ls -la quests || true; exit 1; }
+
+      - name: Validate output
+        run: |
+          set -euo pipefail
+          DATE="$(date -u +%F)"
+          node validate-quest.js "quests/${DATE}.json"
+
+      - name: Commit & push
+        run: |
+          set -euo pipefail
+          DATE="$(date -u +%F)"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Resolve date and paths
-        id: vars
-        shell: bash
-        run: |
-          TODAY="$(date +%F)"
-          OUT="quests/${TODAY}.json"
-          FORCE="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.force == 'true' }}"
-          echo "today=$TODAY" >> "$GITHUB_OUTPUT"
-          echo "out=$OUT" >> "$GITHUB_OUTPUT"
-          if [[ "$FORCE" == "true" ]]; then echo "force=1" >> "$GITHUB_OUTPUT"; else echo "force=" >> "$GITHUB_OUTPUT"; fi
-          echo "Resolved TODAY=$TODAY OUT=$OUT FORCE=${FORCE:-0}"
-
-      - name: Detect package manager & lockfile
-        id: pm
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -f package-lock.json ]]; then
-            echo "pm=npm" >> "$GITHUB_OUTPUT"
-            echo "lock=package-lock.json" >> "$GITHUB_OUTPUT"
-          elif [[ -f yarn.lock ]]; then
-            echo "pm=yarn" >> "$GITHUB_OUTPUT"
-            echo "lock=yarn.lock" >> "$GITHUB_OUTPUT"
-          elif [[ -f pnpm-lock.yaml ]]; then
-            echo "pm=pnpm" >> "$GITHUB_OUTPUT"
-            echo "lock=pnpm-lock.yaml" >> "$GITHUB_OUTPUT"
-          else
-            echo "pm=npm" >> "$GITHUB_OUTPUT"
-            echo "lock=" >> "$GITHUB_OUTPUT"
-            echo "No lockfile found at repo root; proceeding without cache."
-          fi
-
-      # Only enable caching if a lockfile was found
-      - name: Set up Node.js (with cache when lockfile exists)
-        if: steps.pm.outputs.lock != ''
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: ${{ steps.pm.outputs.pm }}
-          cache-dependency-path: ${{ steps.pm.outputs.lock }}
-
-      - name: Set up Node.js (no cache)
-        if: steps.pm.outputs.lock == ''
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Install dependencies
-        shell: bash
-        run: |
-          set -euo pipefail
-          case "${{ steps.pm.outputs.pm }}" in
-            npm)
-              if [[ -f package-lock.json ]]; then npm ci; else npm i; fi
-              ;;
-            yarn)
-              yarn install --frozen-lockfile || yarn install
-              ;;
-            pnpm)
-              corepack enable
-              pnpm install --frozen-lockfile || pnpm install
-              ;;
-          esac
-
-      - name: Generate today’s quest
-        id: gen
-        shell: bash
-        run: |
-          set -euo pipefail
-          OUT="${{ steps.vars.outputs.out }}"
-          TODAY="${{ steps.vars.outputs.today }}"
-          FORCE="${{ steps.vars.outputs.force }}"
-          mkdir -p quests
-
-          # Skip on scheduled run if today's file already exists and not forcing
-          if [[ -f "$OUT" && -z "${FORCE}" ]]; then
-            echo "Today's quest already exists at $OUT — skipping."
-            echo "skipped=1" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "Generating quest for $TODAY -> $OUT"
-
-          # Prefer your npm script named "daily"; pass DATE/OUT so your script can use them.
-          if npm run | grep -qE '^\s*daily'; then
-            DATE="$TODAY" OUT="$OUT" npm run -s daily
-          elif [[ -f generate-quest.js ]]; then
-            node generate-quest.js --date "$TODAY" --out "$OUT" || node generate-quest.js > "$OUT"
-          else
-            echo "No generator found. Add an npm script 'daily' or a generate-quest.js."
-            exit 2
-          fi
-
-          # Ensure file exists and is non-empty
-          if [[ ! -s "$OUT" ]]; then
-            echo "ERROR: $OUT was not produced or is empty."
-            exit 1
-          fi
-          echo "skipped=" >> "$GITHUB_OUTPUT"
-
-      - name: Validate quest JSON (jq)
-        if: steps.gen.outputs.skipped != '1'
-        run: |
-          jq -e type "${{ steps.vars.outputs.out }}" > /dev/null
-          jq -e '((.title // .name // .questTitle) and ((.steps // .objectives // .tasks) | length >= 1 and length <= 3))' "${{ steps.vars.outputs.out }}" > /dev/null
-
-      - name: Extended validation (if present)
-        if: steps.gen.outputs.skipped != '1'
-        run: |
-          if [[ -f validate-quest.js ]]; then
-            node validate-quest.js "${{ steps.vars.outputs.out }}"
-          else
-            echo "validate-quest.js not present — skipping extended validation."
-          fi
-
-      - name: Commit & push (only when generated)
-        if: steps.gen.outputs.skipped != '1'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git pull --rebase origin "${GITHUB_REF_NAME:-main}" || true
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git add -A
-            git commit -m "chore(quest): add ${{ steps.vars.outputs.today }} quest [skip ci]"
-            git push
-            echo "Pushed new quest for ${{ steps.vars.outputs.today }}"
-          else
-            echo "No changes to commit."
-          fi
+          git add "quests/${DATE}.json"
+          git commit -m "chore(quests): add ${DATE}.json" || echo "Nothing to commit"
+          git push
