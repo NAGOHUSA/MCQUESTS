@@ -1,0 +1,20 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Cozy Base Week",
+  "color": "#be2edd",
+  "id": "2025-11-05",
+  "date": "2025-11-05",
+  "lore": "Comfort and order—make it feel like home.",
+  "biome_hint": "Forest",
+  "reward": "An organized attic",
+  "steps": [
+    "Organize your items so every chest has a purpose.",
+    "Fence a small garden right outside your door."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
