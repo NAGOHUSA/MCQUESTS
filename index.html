@@ -1,154 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Minecraft Daily Quest</title>
-  <meta name="description" content="New vanilla Minecraft quest every day. No mods. Play in any world or seed. Vote once per day and climb the leaderboard." />
+  <meta name="description" content="A fresh vanilla Minecraft quest every day. No mods. Any seed."/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0b1020; --panel:#111936; --accent:#31e081; --accent-2:#ffd24d; --text:#eef3ff; --muted:#9db0ff; --danger:#ff6b6b;
-      --border:rgba(255,255,255,0.08);
+      --bg1:#0b1020; --bg2:#152042;
+      --grass:#5ecb5e; --dirt:#8b5a2b; --leaf:#2ecc71; --sky:#7ed6ff;
+      --accent:#31e081; --accent2:#ffd24d; --card:#101a35;
+      --text:#eef3ff; --muted:#a8b7ff; --border:rgba(255,255,255,.12);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
     }
     *{box-sizing:border-box}
-    body{margin:0;background:linear-gradient(180deg,#0b1020 0%,#0d1230 100%);color:var(--text);font-family:Montserrat,system-ui,Segoe UI,Roboto,Arial,sans-serif}
-    a{color:var(--accent)}
-    .wrap{max-width:1100px;margin:0 auto;padding:24px}
-    header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#3cf19c 0%,#1cb0ff 100%);box-shadow:0 8px 30px rgba(49,224,129,.25)}
-    h1{font-size:clamp(22px,4vw,32px);margin:0;font-weight:800;letter-spacing:0.3px}
-    .tag{background:rgba(49,224,129,.12);border:1px solid rgba(49,224,129,.35);color:#9ff6c8;padding:4px 10px;border-radius:999px;font-size:12px}
-    .grid{display:grid;grid-template-columns:1fr;gap:16px}
-    @media (min-width:980px){.grid{grid-template-columns:1.4fr .6fr}}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:18px 18px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-    .card h2{margin:0 0 10px 0;font-size:20px}
+    body{margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:var(--text);font-family:Montserrat,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    a{color:var(--accent);text-decoration:none}
+    .wrap{max-width:1100px;margin:0 auto;padding:20px}
+    header{display:flex;align-items:center;gap:14px;margin:6px 0 16px}
+    .logo{
+      width:52px;height:52px;border-radius:8px;position:relative;box-shadow:var(--shadow);
+      background:linear-gradient(#66d366,#4ec24e);
+      border:2px solid #2a8f2a;
+    }
+    .logo:before{
+      content:"";position:absolute;left:0;right:0;top:40%;height:40%;
+      background:#7b5222;border-top:2px solid #4f3315;border-bottom:2px solid #4f3315; border-radius:0 0 6px 6px;
+    }
+    h1{font-size:clamp(22px,4.2vw,34px);margin:0;font-weight:800;letter-spacing:.3px}
+    .subtitle{font-family:"Press Start 2P", system-ui; font-size:12px; color:var(--accent2); letter-spacing:.5px}
+    .grid{display:grid;gap:16px;grid-template-columns:1fr}
+    @media(min-width:980px){.grid{grid-template-columns:1.4fr .6fr}}
+    .card{
+      background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.015));
+      border:1px solid var(--border); border-radius:16px; padding:16px 16px 18px; box-shadow:var(--shadow);
+      position:relative; overflow:hidden;
+    }
+    .card:before{ /* pixel grass cap */
+      content:""; position:absolute; inset:auto 0 100% 0; height:12px; background:
+      linear-gradient(90deg,rgba(255,255,255,.15) 0 2px, transparent 2px 4px) repeat-x;
+      transform:translateY(12px);
+    }
+    .card h2{margin:0 0 10px;font-size:20px}
     .muted{color:var(--muted)}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .pill{border:1px solid var(--border);border-radius:999px;padding:6px 10px;background:rgba(255,255,255,0.03)}
-    .btn{appearance:none;border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));color:var(--text);padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
-    .btn[disabled]{opacity:.5;cursor:not-allowed}
-    .btn-accent{border-color:rgba(49,224,129,.55);background:linear-gradient(180deg,rgba(49,224,129,.18),rgba(49,224,129,.10))}
-    .stars{display:flex;gap:8px;align-items:center}
-    .star{font-size:28px;cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
-    .star.off{opacity:.35}
-    .hr{height:1px;border:0;background:var(--border);margin:14px 0}
-    .list{display:flex;flex-direction:column;gap:10px;max-height:350px;overflow:auto}
-    .list a{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;text-decoration:none;background:rgba(255,255,255,.02)}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      border:1px solid var(--border); border-radius:999px; padding:7px 12px;
+      background:rgba(255,255,255,.03); font-size:13px;
+    }
     .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;background:#0c132b;border:1px solid var(--border);border-radius:6px;padding:2px 6px}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left}
-    tbody tr:hover{background:rgba(255,255,255,.03)}
-    .hint{font-size:12px;opacity:.8}
-    .success{color:#9ff6c8}
-    .warn{color:#ff6b6b}
-    footer{opacity:.7;margin-top:18px;font-size:12px}
-    .step{display:flex;align-items:flex-start;gap:10px;margin:8px 0}
-    .chk{accent-color:#31e081;min-width:18px;min-height:18px;margin-top:2px}
+    .hr{height:1px;border:0;background:var(--border);margin:14px 0}
+    .btn{
+      appearance:none; cursor:pointer; font-weight:800;
+      border:2px solid #2a8f2a; color:#0b1409;
+      background:linear-gradient(#aaf29a,#6ee06e);
+      box-shadow:0 4px 0 #2a8f2a, inset 0 0 0 2px rgba(255,255,255,.2);
+      border-radius:10px; padding:12px 16px; font-family:"Press Start 2P", system-ui; font-size:12px;
+      transition:transform .02s ease;
+    }
+    .btn:active{transform:translateY(2px); box-shadow:0 2px 0 #2a8f2a, inset 0 0 0 2px rgba(255,255,255,.2)}
+    .btn.secondary{
+      border-color:#a07a24; background:linear-gradient(#ffe48c,#ffd24d); box-shadow:0 4px 0 #a07a24, inset 0 0 0 2px rgba(255,255,255,.2);
+    }
+    .step{display:flex;gap:10px;align-items:flex-start;margin:10px 0;padding:10px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.03)}
+    .chk{accent-color:#31e081;min-width:22px;min-height:22px;margin-top:2px}
     .step.done span{text-decoration:line-through;opacity:.75}
-    .lb-pill{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);font-size:11px}
+    .list{display:flex;flex-direction:column;gap:10px;max-height:380px;overflow:auto}
+    .list a{display:flex;justify-content:space-between;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:rgba(255,255,255,.02)}
+    .hint{font-size:12px;opacity:.85}
+    footer{opacity:.75;margin-top:18px;font-size:12px}
+    /* Big tap targets on mobile */
+    @media (max-width:640px){
+      .pill{font-size:14px}
+      .btn{font-size:11px}
+    }
+    /* Tiny pixel border around cards (Minecraft vibe) */
+    .pixel-border{outline:2px solid rgba(255,255,255,.08); box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
+    /* Theme color chip */
+    .chip{display:inline-flex;align-items:center;gap:8px}
+    .dot{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.35);box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)}
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div class="logo"></div>
+      <div class="logo" aria-hidden="true"></div>
       <div>
         <h1>Minecraft Daily Quest</h1>
-        <div class="row"><span class="tag">Vanilla • No mods • Any seed</span></div>
+        <div class="subtitle">Vanilla • No Mods • Any Seed</div>
       </div>
     </header>
 
     <div class="grid">
       <!-- LEFT: Today + Archive -->
-      <div class="card">
-        <h2>Today’s Quest <span id="questDate" class="muted"></span></h2>
+      <section class="card pixel-border" aria-labelledby="todayTitle">
+        <h2 id="todayTitle">Today’s Quest <span id="questDate" class="muted"></span></h2>
         <div id="questLoading" class="muted">Loading today’s quest…</div>
+
         <div id="questBox" style="display:none">
           <div class="row" style="justify-content:space-between">
             <div class="row">
+              <span class="pill chip"><span class="dot" id="themeDot"></span><span id="questTheme">Theme: —</span></span>
               <span class="pill" id="questBiome">Biome: —</span>
               <span class="pill" id="questReward">Reward: —</span>
-              <span class="pill" id="questTheme">Theme: —</span>
             </div>
             <span class="pill">ID: <span id="questId" class="kbd"></span></span>
           </div>
 
-          <h3 id="questTitle" style="margin:12px 0 8px 0"></h3>
+          <h3 id="questTitle" style="margin:12px 0 6px 0"></h3>
           <div id="questLore" class="muted" style="white-space:pre-wrap"></div>
 
           <div class="hr"></div>
           <div>
-            <strong>Steps:</strong>
-            <div id="questSteps" style="margin-top:8px"></div>
+            <strong>Steps</strong> <span class="hint muted">(progress is saved on this device)</span>
+            <div id="questSteps" style="margin-top:10px"></div>
             <div id="questProgress" class="hint" style="margin-top:6px"></div>
           </div>
 
           <div class="hr"></div>
-
-          <div class="row" style="justify-content:space-between;align-items:center">
-            <div>
-              <div class="muted hint">Rate today’s quest (once per device):</div>
-              <div class="stars" id="starRow" aria-label="Rate 1 to 5">
-                <span class="star off" data-star="1">★</span>
-                <span class="star off" data-star="2">★</span>
-                <span class="star off" data-star="3">★</span>
-                <span class="star off" data-star="4">★</span>
-                <span class="star off" data-star="5">★</span>
-              </div>
-              <div id="voteMsg" class="hint" style="margin-top:6px"></div>
-            </div>
-            <button id="voteBtn" class="btn btn-accent">Submit Vote</button>
+          <div class="row" style="justify-content:flex-end;gap:10px">
+            <button id="resetBtn" class="btn secondary" title="Clear checkboxes for today">RESET</button>
+            <button id="shareBtn" class="btn" title="Share today’s quest">SHARE</button>
           </div>
-
-          <div class="hr"></div>
-          <div class="muted hint" id="statsLine">Ratings: —</div>
         </div>
+      </section>
 
-        <div class="hr"></div>
+      <!-- RIGHT: Archive & About -->
+      <aside class="card pixel-border">
         <h2>Archive</h2>
-        <div class="hint muted">Browse previous quests and tap to preview.</div>
+        <div class="hint muted">Tap a date to preview that quest.</div>
         <div id="archiveList" class="list" style="margin-top:8px">
           <div class="muted">Loading archive…</div>
         </div>
-      </div>
 
-      <!-- RIGHT: How it works + Leaderboard -->
-      <div class="card">
-        <h2>How it works</h2>
-        <ul style="margin:8px 0 10px 18px;line-height:1.5">
-          <li>A new <strong>vanilla</strong> quest drops every day. No commands, no mods—<em>works in any world/seed</em>.</li>
-          <li>Check off steps as you go—progress is saved <strong>on your device</strong>.</li>
-          <li>Rate with <strong>stars</strong> (optional; requires Supabase anon key & REST URL).</li>
-          <li>See older quests in the <strong>Archive</strong> and the <strong>Top-Rated Leaderboard</strong>.</li>
-        </ul>
         <div class="hr"></div>
-        <h2>Top-Rated Leaderboard</h2>
-        <div class="hint muted">If not configured, this section shows a friendly message.</div>
-        <div id="lbWrap" style="margin-top:8px">
-          <div class="muted">Loading leaderboard…</div>
-        </div>
-      </div>
+        <h2>About</h2>
+        <ul class="hint" style="margin:8px 0 0 18px; line-height:1.6">
+          <li>New <strong>vanilla</strong> quest drops daily (NY time).</li>
+          <li>Kid-friendly: no Nether/End, no potions, no villagers/structures.</li>
+          <li>Works in any world or seed on Java or Bedrock.</li>
+          <li>All progress is stored locally on your device.</li>
+        </ul>
+      </aside>
     </div>
 
     <footer>
-      Data: <span class="kbd">/quests/*.json</span> from GitHub • Votes via optional Supabase (insert-only RLS).
+      Data: <span class="kbd">/quests/*.json</span>
+      • Timezone: <span class="kbd">America/New_York</span>
     </footer>
   </div>
 
-  <!-- Optional Supabase config -->
   <script>
-    window.SUPABASE_REST_URL = "";       // e.g. "https://YOUR_PROJECT.supabase.co/rest/v1"
-    window.SUPABASE_ANON_KEY = "";       // public anon key
-    window.SUPABASE_COMPAT_VOTES = false;
-    window.SUPABASE_TABLE_RATINGS = "ratings";
-    window.SUPABASE_VIEW_RATINGS_AGG = "ratings_aggregate";
-    window.SUPABASE_TABLE_VOTES = "votes";
-    window.SUPABASE_VIEW_VOTES_AGG = "votes_aggregate";
-  </script>
+    // ---------- Helpers ----------
+    const tz = "America/New_York";
+    const $ = sel => document.querySelector(sel);
+    const todayStr = (() => {
+      const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year:"numeric", month:"2-digit", day:"2-digit" })
+        .formatToParts(new Date())
+        .reduce((a,p)=> (a[p.type]=p.value, a), {});
+      return `${parts.year}-${parts.month}-${parts.day}`; // YYYY-MM-DD
+    })();
 
-  <!-- Frontend logic -->
-  <script src="quest-ui.js"></script>
+    const QUESTS_BASE = "./quests";
+
+    function storeKey(date){ return `mcq:${date}:steps`; }
+    function loadChecks(date, len){ try { const a = JSON.parse(localStorage.getItem(storeKey(date))||"[]"); return a.slice(0,len); } catch { return []; } }
+    function saveChecks(date, arr){ try { localStorage.setItem(storeKey(date), JSON.stringify(arr||[])); } catch {} }
+
+    function setThemeDot(dotEl, color){
+      dotEl.style.background = color || "#5ecb5e";
+    }
+
+    // ---------- Render quest ----------
+    async function loadQuest(dateStr){
+      $("#questDate").textContent = `• ${dateStr}`;
+      $("#questLoading").style.display = "block";
+      $("#questBox").style.display = "none";
+
+      try{
+        const res = await fetch(`${QUESTS_BASE}/${dateStr}.json`, { cache:"no-store" });
+        if(!res.ok) throw new Error("Not found");
+        const q = await res.json();
+
+        // Fill top
+        $("#questId").textContent = q.id || dateStr;
+        $("#questTheme").textContent = `Theme: ${q.theme || "—"}`;
+        $("#questBiome").textContent = `Biome: ${q.biome_hint || q.biome || "Any"}`;
+        $("#questReward").textContent = `Reward: ${q.reward || "Bragging rights"}`;
+        $("#questTitle").textContent = q.title || "Daily Quest";
+        $("#questLore").textContent = q.lore || "";
+
+        setThemeDot($("#themeDot"), q.color || "#5ecb5e");
+
+        // Steps
+        const stepsBox = $("#questSteps");
+        stepsBox.innerHTML = "";
+        const steps = Array.isArray(q.steps) ? q.steps.slice(0,3) : [];
+        const checks = loadChecks(dateStr, steps.length);
+        steps.forEach((s, i) => {
+          const step = document.createElement("div");
+          step.className = "step";
+          step.innerHTML = `
+            <input type="checkbox" class="chk" id="chk_${i}" ${checks[i] ? "checked":""} />
+            <label for="chk_${i}"><span>${s}</span></label>
+          `;
+          stepsBox.appendChild(step);
+        });
+        updateProgress(dateStr);
+
+        stepsBox.addEventListener("change", () => {
+          const arr = [...stepsBox.querySelectorAll(".chk")].map(c => c.checked);
+          saveChecks(dateStr, arr);
+          updateProgress(dateStr);
+        }, { once:false });
+
+        // Buttons
+        $("#resetBtn").onclick = () => {
+          saveChecks(dateStr, []);
+          stepsBox.querySelectorAll(".chk").forEach(c => c.checked = false);
+          updateProgress(dateStr);
+        };
+        $("#shareBtn").onclick = async () => {
+          const shareData = {
+            title: "Minecraft Daily Quest",
+            text: `${q.title} — ${dateStr}\n${(q.steps||[]).join(" • ")}`,
+            url: location.href
+          };
+          if (navigator.share) { try { await navigator.share(shareData); } catch {} }
+          else {
+            await navigator.clipboard.writeText(`${shareData.title}\n${shareData.text}\n${shareData.url}`);
+            alert("Link copied to clipboard!");
+          }
+        };
+
+        $("#questLoading").style.display = "none";
+        $("#questBox").style.display = "block";
+      } catch(err){
+        $("#questLoading").textContent = "No quest found for today. Check back later.";
+        $("#questBox").style.display = "none";
+      }
+    }
+
+    function updateProgress(dateStr){
+      const box = $("#questSteps");
+      const total = box.querySelectorAll(".chk").length;
+      const done = [...box.querySelectorAll(".chk")].filter(c => c.checked).length;
+      box.querySelectorAll(".step").forEach((el,i)=>{
+        el.classList.toggle("done", box.querySelector(`#chk_${i}`)?.checked);
+      });
+      $("#questProgress").textContent = total ? `Progress: ${done}/${total}` : "";
+    }
+
+    // ---------- Archive ----------
+    async function loadArchive(){
+      const list = $("#archiveList");
+      try{
+        const res = await fetch(`${QUESTS_BASE}/index.json`, { cache:"no-store" });
+        if(!res.ok) throw new Error("No archive");
+        const dates = await res.json(); // array of "YYYY-MM-DD"
+        if(!Array.isArray(dates) || dates.length===0){ list.innerHTML = '<div class="muted">No past quests yet.</div>'; return; }
+        list.innerHTML = "";
+        dates.forEach(d => {
+          const a = document.createElement("a");
+          a.href = "#";
+          a.innerHTML = `<span>${d}</span><span class="kbd">view</span>`;
+          a.onclick = (e)=>{ e.preventDefault(); loadQuest(d); };
+          list.appendChild(a);
+        });
+      }catch{
+        list.innerHTML = '<div class="muted">Archive not available.</div>';
+      }
+    }
+
+    // ---------- Init ----------
+    (async function(){
+      await loadQuest(todayStr);
+      await loadArchive();
+    })();
+  </script>
 </body>
 </html>
