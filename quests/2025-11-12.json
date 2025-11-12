@@ -1,0 +1,19 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Explorer Week",
+  "color": "#22a6b3",
+  "id": "2025-11-12",
+  "date": "2025-11-12",
+  "lore": "Venture safely, gather resources, and return with stories.",
+  "biome_hint": "River",
+  "reward": "A safe cave entryway",
+  "steps": [
+    "Explore for a few minutes and safely return to base (no map needed)."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
