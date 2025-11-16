@@ -1,0 +1,21 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Explorer Week",
+  "color": "#22a6b3",
+  "id": "2025-11-16",
+  "date": "2025-11-16",
+  "lore": "Venture safely, gather resources, and return with stories.",
+  "biome_hint": "Beach",
+  "reward": "A safe cave entryway",
+  "steps": [
+    "Explore for a few minutes and safely return to base (no map needed).",
+    "Return with a full stack of any useful block you found.",
+    "Build a 7-block watchtower with ladder access and a torch on top."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
