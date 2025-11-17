@@ -1,0 +1,19 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Builder Week",
+  "color": "#f0932b",
+  "id": "2025-11-17",
+  "date": "2025-11-17",
+  "lore": "Shape the world with safe shelters and style.",
+  "biome_hint": "Hills",
+  "reward": "A tidy workshop corner",
+  "steps": [
+    "Place a door, pressure plate, and a few torches for a welcoming entrance."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
