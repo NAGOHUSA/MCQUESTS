@@ -1,0 +1,20 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Builder Week",
+  "color": "#f0932b",
+  "id": "2025-11-18",
+  "date": "2025-11-18",
+  "lore": "Shape the world with safe shelters and style.",
+  "biome_hint": "Taiga",
+  "reward": "A proud screenshot of your build",
+  "steps": [
+    "Place a door, pressure plate, and a few torches for a welcoming entrance.",
+    "Build a porch or balcony with fences as railings."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
