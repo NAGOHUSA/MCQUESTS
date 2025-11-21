@@ -1,0 +1,21 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Builder Week",
+  "color": "#f0932b",
+  "id": "2025-11-21",
+  "date": "2025-11-21",
+  "lore": "Shape the world with safe shelters and style.",
+  "biome_hint": "Any",
+  "reward": "A tidy workshop corner",
+  "steps": [
+    "Lay a 10-block path from your door using any block type.",
+    "Build a porch or balcony with fences as railings.",
+    "Install 8 more glass blocks and a skylight."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
