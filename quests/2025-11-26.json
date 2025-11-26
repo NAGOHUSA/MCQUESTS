@@ -1,0 +1,20 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Farming Week",
+  "color": "#6ab04c",
+  "id": "2025-11-26",
+  "date": "2025-11-26",
+  "lore": "Nurture the land and stock your pantry.",
+  "biome_hint": "Beach",
+  "reward": "A neatly labeled pantry chest",
+  "steps": [
+    "Create a tiny greenhouse: walls of any block and at least 4 glass windows.",
+    "Expand to 3 crop types (any you have) and replant what you harvest."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
