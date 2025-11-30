@@ -1,0 +1,21 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Farming Week",
+  "color": "#6ab04c",
+  "id": "2025-11-30",
+  "date": "2025-11-30",
+  "lore": "Nurture the land and stock your pantry.",
+  "biome_hint": "Any",
+  "reward": "A stack of seeds",
+  "steps": [
+    "Create a tiny greenhouse: walls of any block and at least 4 glass windows.",
+    "Plant 4 saplings (any mix) and fence the area.",
+    "Build a fenced pen and move two animals into it."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
