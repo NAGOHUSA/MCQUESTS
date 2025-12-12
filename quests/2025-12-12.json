@@ -1,0 +1,21 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Survival Skills Week",
+  "color": "#eb4d4b",
+  "id": "2025-12-12",
+  "date": "2025-12-12",
+  "lore": "Stay safe, prepare smart, master day-one essentials.",
+  "biome_hint": "Hills",
+  "reward": "A fortress-cozy base",
+  "steps": [
+    "Craft a water bucket and practice a gentle descent from a small height.",
+    "Build a 5×5×3 safe room with a door and two windows.",
+    "Make a mob-safe mine entrance with a door and lights."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
