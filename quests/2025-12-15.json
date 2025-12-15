@@ -1,0 +1,19 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Explorer Week",
+  "color": "#22a6b3",
+  "id": "2025-12-15",
+  "date": "2025-12-15",
+  "lore": "Venture safely, gather resources, and return with stories.",
+  "biome_hint": "Hills",
+  "reward": "A trusty docked boat",
+  "steps": [
+    "Craft 16 torches and a spare stone pickaxe for your journey."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
