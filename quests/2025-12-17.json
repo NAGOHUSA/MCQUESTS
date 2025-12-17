@@ -1,0 +1,20 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Explorer Week",
+  "color": "#22a6b3",
+  "id": "2025-12-17",
+  "date": "2025-12-17",
+  "lore": "Venture safely, gather resources, and return with stories.",
+  "biome_hint": "River",
+  "reward": "A safe cave entryway",
+  "steps": [
+    "Mine 32 cobblestone and 8 iron ore if you see any; smelt what you find.",
+    "Light a small cave entrance with 8 torches and gather common ores you see."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
