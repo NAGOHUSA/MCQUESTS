@@ -1,0 +1,20 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Winter Lights Week",
+  "color": "#74b9ff",
+  "id": "2025-12-24",
+  "date": "2025-12-24",
+  "lore": "Warm lights in the cold—cozy builds and bright paths.",
+  "biome_hint": "Forest",
+  "reward": "A bay-window view",
+  "steps": [
+    "Light the perimeter so no mobs can sneak close.",
+    "Make a glass bay window or skylight to let light in."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
