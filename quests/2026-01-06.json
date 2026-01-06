@@ -1,0 +1,20 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "New Year Kickoff",
+  "color": "#fdcb6e",
+  "id": "2026-01-06",
+  "date": "2026-01-06",
+  "lore": "Fresh starts—organize, label, and light the way forward.",
+  "biome_hint": "Any",
+  "reward": "A tidy farm corner",
+  "steps": [
+    "Craft spare stone tools and store backups.",
+    "Make a safe mine entrance with door and lights."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
