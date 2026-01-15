@@ -1,0 +1,20 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Builder Week",
+  "color": "#f0932b",
+  "id": "2026-01-15",
+  "date": "2026-01-15",
+  "lore": "Shape the world with safe shelters and style.",
+  "biome_hint": "Birch Forest",
+  "reward": "A tidy workshop corner",
+  "steps": [
+    "Create a storage wall with 4 chests and labels.",
+    "Add a crafting table, furnace, chest, bed, and one decorative block."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
