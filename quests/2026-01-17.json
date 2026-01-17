@@ -1,0 +1,21 @@
+{
+  "title": "Vanilla Daily Quest",
+  "theme": "Builder Week",
+  "color": "#f0932b",
+  "id": "2026-01-17",
+  "date": "2026-01-17",
+  "lore": "Shape the world with safe shelters and style.",
+  "biome_hint": "Forest",
+  "reward": "A sunny skylight",
+  "steps": [
+    "Make a roof line with slabs or stairs along one side of your base.",
+    "Add a crafting table, furnace, chest, bed, and one decorative block.",
+    "Light the perimeter with 20 torches (no dark spots)."
+  ],
+  "rules": [
+    "Java & Bedrock supported. No commands, no mods, any seed.",
+    "All steps are optional—keep it fun and safe.",
+    "No special structures or other dimensions are required."
+  ],
+  "redo_hint": "Swap any step with another from the same theme or rerun the generator."
+}
